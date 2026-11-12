@@ -1,0 +1,1212 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#16201B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Quota">
+<title>Quota · piani nutrizionali</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F3F4EF; --card:#FFFFFF; --ink:#16201B; --ink2:#3E4842; --mut:#5B655F; --line:#E2E5DE; --line2:#EEF0EA; --soft:#FAFBF8; --inp:#D5DAD3;
+  --green:#1E6B47; --green2:#14492F; --greenbg:#E3F0E8; --greenln:#B9D8C6;
+  --blue:#2F5EA8; --orange:#D9822B; --olive:#7C8A2E; --water:#3D7FC1;
+  --warn:#8A3E10; --warnbg:#FBEBDD; --warn2:#B4531A; --warnsoft:#FDF6EF;
+  --sans:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --disp:"Space Grotesk",Inter,system-ui,sans-serif;
+  --r:14px; --sat:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.4;-webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--green)}
+h1,h2,h3{font-family:var(--disp);font-weight:600;letter-spacing:-.02em;margin:0}
+h1{font-size:28px}h2{font-size:19px}h3{font-size:16px}
+.mut{color:var(--mut)}.small{font-size:12px}.b{font-weight:600}.warn{color:var(--warn)}.ok{color:var(--green)}
+#app{min-height:100vh;display:flex;flex-direction:column}
+#hdr{background:var(--ink);color:var(--bg);padding:12px 16px;display:flex;align-items:center;gap:12px}
+#hdr .brand{font-family:var(--disp);font-weight:700;font-size:17px;letter-spacing:-.01em}
+#hdr .role{margin-left:auto;font-size:12px;color:#C9D0CA;background:rgba(243,244,239,.12);padding:5px 10px;border-radius:999px}
+#main{flex:1;width:100%;max-width:1100px;margin:0 auto;padding:16px 16px 24px;min-width:0}
+#tabs{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--line);display:grid;grid-auto-flow:column;grid-auto-columns:1fr;padding:4px 4px calc(8px + var(--sat))}
+#tabs button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0;border:0;background:transparent;color:var(--mut);font-size:11px;border-radius:10px}
+#tabs button.on{color:var(--green);font-weight:600}
+#tabs svg{width:22px;height:22px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;min-width:0}
+.stack>*,.grow,.two>*{min-width:0}
+.card+.card{margin-top:12px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;align-items:center;gap:10px}
+.row.w{flex-wrap:wrap}
+.wrap{display:flex;flex-wrap:wrap;gap:8px}
+.grow{flex:1;min-width:0}
+.right{margin-left:auto}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:600;padding:11px 16px;border-radius:10px;border:1px solid var(--inp);background:var(--card);color:var(--ink);text-decoration:none;min-height:44px}
+.btn.p{background:var(--green);border-color:var(--green);color:#fff}
+.btn.soft{background:var(--greenbg);border-color:var(--greenln);color:var(--green2)}
+.btn.ghost{background:transparent;border:1px dashed #A9B2AB;color:var(--mut)}
+.btn.sm{padding:7px 11px;min-height:36px;font-size:13px}
+.btn.xs{padding:4px 9px;min-height:30px;font-size:12px;border-radius:8px}
+.btn.wide{width:100%}
+.btn.link{border:0;background:transparent;color:var(--green);padding:6px 0;min-height:0}
+.btn.danger{color:var(--warn);border-color:#E9C9B5}
+.btn:disabled{opacity:.5;cursor:default}
+.inp{width:100%;padding:10px 12px;border:1px solid var(--inp);border-radius:10px;background:var(--soft);min-height:44px}
+.inp.n{text-align:right;font-variant-numeric:tabular-nums}
+textarea.inp{resize:vertical;min-height:70px}
+label.lab{display:block;font-weight:600;margin-bottom:6px}
+.chip{display:inline-block;font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--line2);color:var(--ink2)}
+.chip.ok{background:var(--greenbg);color:var(--green2)}.chip.warn{background:var(--warnbg);color:var(--warn)}.chip.dark{background:var(--ink);color:var(--bg)}
+.pill{font-size:13px;padding:4px 9px;border-radius:8px;background:var(--bg)}
+.bar{height:8px;border-radius:999px;background:var(--line2);overflow:hidden}
+.bar>i{display:block;height:100%;border-radius:999px;background:var(--green)}
+.bar.lg{height:10px}
+.seg{display:flex;background:var(--bg);border-radius:10px;padding:3px}
+.seg button{flex:1;padding:8px 10px;border:0;border-radius:8px;background:transparent;color:var(--ink2);font-size:13px;min-height:40px}
+.seg button.on{background:var(--card);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(22,32,27,.12)}
+.tabs2{display:flex;flex-wrap:wrap;gap:8px}
+.tabs2 button{padding:9px 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);min-height:40px}
+.tabs2 button.on{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:600}
+.days7{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.days7 button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;border-radius:12px;border:1px solid var(--line);background:var(--card);min-height:44px}
+.days7 button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.days7 button.dot::after{content:"";width:5px;height:5px;border-radius:50%;background:var(--green);margin-top:2px}
+.days7 button.on.dot::after{background:#9BD1B4}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.gauto{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.num{font-family:var(--disp);font-weight:600;font-size:22px}
+.num.lg{font-size:30px}
+.tick{width:26px;height:26px;flex-shrink:0;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;background:var(--green)}
+.tick.mod{background:var(--warn2)}.tick.skip{background:#A9B2AB}
+.tick.todo{background:transparent;border:2px solid #C9D0CA}
+.tick svg{width:14px;height:14px}
+.meal.next{border:2px solid var(--green)}
+.hint{font-size:13px;padding:8px 10px;border-radius:10px;background:var(--bg);color:var(--ink2)}
+.hint.warn{background:var(--warnsoft);color:var(--warn)}
+.hint.ok{background:var(--greenbg);color:var(--green2);font-weight:600}
+.list>*{padding:12px 0;border-top:1px solid var(--line2)}
+.list>*:first-child{border-top:0;padding-top:0}
+.qty{display:flex;align-items:center;gap:6px}
+.qty button{width:44px;height:44px;border-radius:12px;border:1px solid var(--inp);background:var(--card);font-size:20px}
+.qty span{min-width:58px;text-align:center;font-weight:600}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);font-weight:600;text-align:left;padding:6px 6px;border-bottom:1px solid var(--line2)}
+.tbl td{padding:8px 6px;border-bottom:1px solid var(--line2);vertical-align:middle}
+.tbl td.n,.tbl th.n{text-align:right;font-variant-numeric:tabular-nums}
+.tbl .inp{min-height:36px;padding:6px 8px}
+.scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.cell{padding:8px 6px;border-radius:8px;background:var(--bg);text-align:right;font-variant-numeric:tabular-nums}
+.cell.off{background:var(--warnbg);color:var(--warn);font-weight:600}
+.cell.todo{background:var(--card);border:1px dashed #C9D0CA;color:var(--mut)}
+.clientcard{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--r);background:var(--card);border:1px solid var(--line);width:100%;text-align:left}
+.clientcard.on{border:2px solid var(--green)}
+.avatar{width:40px;height:40px;flex-shrink:0;border-radius:50%;background:#E3E7E0;display:flex;align-items:center;justify-content:center;font-weight:600}
+.dist{display:flex;height:34px;border-radius:10px;overflow:hidden;gap:2px}
+.dist>div{display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;min-width:0}
+.food{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line2)}
+.food:first-child{border-top:0}
+#sheetbg{position:fixed;inset:0;background:rgba(22,32,27,.45);z-index:50;display:none}
+#sheet{position:fixed;left:0;right:0;bottom:0;max-height:92vh;overflow:auto;background:var(--bg);border-radius:18px 18px 0 0;padding:14px 16px calc(20px + var(--sat));z-index:51;display:none;max-width:720px;margin:0 auto}
+#sheet.open,#sheetbg.open{display:block}
+#sheet .grab{width:40px;height:4px;border-radius:2px;background:#C9D0CA;margin:0 auto 12px}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + var(--sat));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:600;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center}
+#toast.on{opacity:1}
+.notice{background:var(--warnsoft);color:var(--warn);border-radius:10px;padding:10px 12px;font-size:13px}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:6px 0}
+.srch{position:relative}
+.srch .res{position:absolute;left:0;right:0;top:100%;z-index:5;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(22,32,27,.12);max-height:280px;overflow:auto;margin-top:4px}
+.srch .res button{display:flex;justify-content:space-between;gap:10px;width:100%;text-align:left;padding:10px 12px;border:0;background:transparent;border-top:1px solid var(--line2)}
+.srch .res button:first-child{border-top:0}
+.srch .res button:hover{background:var(--soft)}
+.ex{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--soft)}
+@media(min-width:760px){
+  #main{padding:24px}
+  h1{font-size:30px}
+  .two{display:flex;gap:20px;align-items:flex-start}
+  .two>.side{flex:0 0 320px}
+  .two>.grow{flex:1;min-width:0}
+}
+@media(max-width:480px){.g3{gap:8px}.num.lg{font-size:26px}}
+</style>
+</head>
+<body>
+<div id="app">
+<header id="hdr"><span class="brand" id="brand">Quota</span><span class="role" id="roleTag"></span></header>
+<main id="main"></main>
+<nav id="tabs" aria-label="Navigazione"></nav>
+</div>
+<div id="sheetbg" onclick="sheetClose()"></div>
+<div id="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div id="sheetBody"></div></div>
+<div id="toast" role="status"></div>
+<script>
+// ===== DATABASE ALIMENTI DI BASE =====
+// Valori per 100 g di parte edibile (crudo salvo indicazione): kcal, proteine, carboidrati, grassi, fibre, sale (g).
+// Valori indicativi medi, pensati come base di partenza: da sostituire o integrare con una tabella ufficiale.
+// Formato: [nome, categoria, kcal, P, C, G, fibre, sale, porzioni]
+const FOODS_BASE = [
+  // Cereali, pane, tuberi
+  ["Riso basmati (crudo)", "cereali", 350, 8, 78, 0.6, 1.5, 0, []],
+  ["Riso bianco (crudo)", "cereali", 355, 7, 79, 0.6, 1, 0, []],
+  ["Riso integrale (crudo)", "cereali", 360, 7.5, 75, 2.5, 3.5, 0, []],
+  ["Pasta di semola (cruda)", "cereali", 353, 12, 71, 1.5, 3, 0, []],
+  ["Pasta integrale (cruda)", "cereali", 340, 13, 65, 2.5, 8, 0, []],
+  ["Fiocchi d'avena", "cereali", 370, 13, 60, 7, 10, 0, [["cucchiaio", 10]]],
+  ["Pane integrale", "cereali", 240, 9, 42, 2.5, 7, 1.3, [["fetta", 30]]],
+  ["Pane bianco", "cereali", 265, 9, 49, 3, 2.5, 1.4, [["fetta", 30]]],
+  ["Pane di segale", "cereali", 230, 8, 45, 1.5, 8, 1.2, [["fetta", 35]]],
+  ["Fette biscottate integrali", "cereali", 380, 13, 70, 5, 7, 1.2, [["fetta", 8]]],
+  ["Gallette di riso", "cereali", 385, 8, 82, 3, 2, 0.2, [["galletta", 8]]],
+  ["Gallette di mais", "cereali", 380, 8, 80, 3, 3, 0.3, [["galletta", 8]]],
+  ["Patate", "cereali", 77, 2, 17, 0.1, 2, 0, [["patata media", 150]]],
+  ["Patate dolci", "cereali", 86, 1.6, 20, 0.1, 3, 0, []],
+  ["Quinoa (cruda)", "cereali", 368, 14, 64, 6, 7, 0, []],
+  ["Cous cous (crudo)", "cereali", 376, 13, 77, 0.6, 5, 0, []],
+  ["Farro (crudo)", "cereali", 340, 15, 67, 2.5, 7, 0, []],
+  ["Orzo perlato (crudo)", "cereali", 352, 10, 73, 1.5, 9, 0, []],
+  ["Mais dolce (sgocciolato)", "cereali", 90, 3, 16, 1.5, 2.5, 0.6, [["cucchiaio", 15]]],
+  ["Piadina", "cereali", 300, 8, 48, 9, 2, 1.5, [["piadina", 80]]],
+  ["Tortilla di grano", "cereali", 300, 8, 50, 7, 2, 1.2, [["tortilla", 40]]],
+  ["Pane arabo (pita)", "cereali", 275, 9, 55, 1.5, 3, 1, [["pita", 60]]],
+  ["Cracker", "cereali", 430, 10, 70, 12, 3, 1.8, [["pacchetto", 25]]],
+  ["Muesli", "cereali", 390, 10, 62, 10, 8, 0.1, [["cucchiaio", 12]]],
+  ["Corn flakes", "cereali", 375, 7, 84, 1, 3, 1.2, [["tazza", 30]]],
+  ["Gnocchi di patate", "cereali", 150, 3.5, 32, 0.5, 2, 0.8, [["porzione", 200]]],
+  // Carni e salumi
+  ["Petto di pollo", "carne", 110, 23, 0, 1.5, 0, 0.2, [["fettina", 100]]],
+  ["Coscia di pollo (senza pelle)", "carne", 125, 20, 0, 5, 0, 0.2, []],
+  ["Fesa di tacchino", "carne", 107, 24, 0, 1, 0, 0.2, [["fettina", 100]]],
+  ["Manzo magro (bistecca)", "carne", 130, 21, 0, 5, 0, 0.15, []],
+  ["Carne macinata di manzo 5%", "carne", 125, 21, 0, 5, 0, 0.2, []],
+  ["Carne macinata di manzo 20%", "carne", 250, 17, 0, 20, 0, 0.2, []],
+  ["Lonza di maiale", "carne", 120, 22, 0, 3.5, 0, 0.2, [["fettina", 100]]],
+  ["Vitello (fettine)", "carne", 107, 21, 0, 2.5, 0, 0.2, [["fettina", 100]]],
+  ["Coniglio", "carne", 118, 20, 0, 4, 0, 0.2, []],
+  ["Hamburger di manzo", "carne", 200, 19, 0, 14, 0, 0.6, [["hamburger", 120]]],
+  ["Bresaola", "salumi", 150, 32, 0, 2, 0, 4.5, [["fetta", 10]]],
+  ["Prosciutto crudo", "salumi", 270, 26, 0, 18, 0, 5.5, [["fetta", 15]]],
+  ["Prosciutto crudo sgrassato", "salumi", 180, 29, 0, 7, 0, 5.5, [["fetta", 15]]],
+  ["Prosciutto cotto", "salumi", 130, 19, 1, 5, 0, 2.2, [["fetta", 15]]],
+  ["Tacchino affettato", "salumi", 105, 20, 1, 2, 0, 2, [["fetta", 15]]],
+  ["Speck", "salumi", 300, 28, 0, 20, 0, 4.5, [["fetta", 12]]],
+  ["Salmone affumicato", "pesce", 180, 23, 0, 10, 0, 3.5, [["fetta", 25]]],
+  // Pesce
+  ["Merluzzo", "pesce", 80, 17, 0, 1, 0, 0.3, [["filetto", 150]]],
+  ["Salmone fresco", "pesce", 200, 20, 0, 13, 0, 0.1, [["filetto", 150]]],
+  ["Tonno fresco", "pesce", 140, 23, 0, 5, 0, 0.1, []],
+  ["Tonno al naturale (sgocciolato)", "pesce", 110, 25, 0, 1, 0, 1, [["scatoletta", 80]]],
+  ["Tonno all'olio (sgocciolato)", "pesce", 190, 25, 0, 10, 0, 1, [["scatoletta", 80]]],
+  ["Orata", "pesce", 120, 20, 0, 4.5, 0, 0.2, []],
+  ["Branzino", "pesce", 110, 20, 0, 3.5, 0, 0.2, []],
+  ["Gamberi", "pesce", 85, 18, 1, 1, 0, 0.5, []],
+  ["Sgombro", "pesce", 200, 18, 0, 14, 0, 0.2, []],
+  ["Sogliola", "pesce", 85, 17, 0, 1.5, 0, 0.3, []],
+  ["Calamari", "pesce", 80, 15, 1, 1.5, 0, 0.3, []],
+  ["Polpo", "pesce", 60, 11, 1, 1, 0, 0.5, []],
+  ["Platessa", "pesce", 80, 17, 0, 1, 0, 0.3, [["filetto", 120]]],
+  // Uova e latticini
+  ["Uovo intero", "uova", 140, 12.5, 0.5, 9.5, 0, 0.3, [["uovo", 55]]],
+  ["Albume", "uova", 45, 11, 0.5, 0, 0, 0.4, [["albume", 33]]],
+  ["Latte intero", "latticini", 64, 3.3, 4.8, 3.6, 0, 0.1, [["bicchiere", 200]]],
+  ["Latte parzialmente scremato", "latticini", 46, 3.3, 5, 1.5, 0, 0.1, [["bicchiere", 200]]],
+  ["Latte scremato", "latticini", 36, 3.4, 5, 0.2, 0, 0.1, [["bicchiere", 200]]],
+  ["Yogurt greco 0%", "latticini", 57, 10, 3.5, 0.2, 0, 0.1, [["vasetto", 170]]],
+  ["Yogurt greco intero", "latticini", 97, 9, 3.5, 5, 0, 0.1, [["vasetto", 170]]],
+  ["Skyr", "latticini", 63, 11, 4, 0.2, 0, 0.1, [["vasetto", 150]]],
+  ["Yogurt bianco magro", "latticini", 45, 4.5, 6, 0.1, 0, 0.1, [["vasetto", 125]]],
+  ["Yogurt bianco intero", "latticini", 65, 4, 5, 3.5, 0, 0.1, [["vasetto", 125]]],
+  ["Fiocchi di latte", "latticini", 100, 12, 3, 4.5, 0, 0.8, [["confezione", 150]]],
+  ["Ricotta vaccina", "latticini", 150, 9, 3.5, 11, 0, 0.3, [["cucchiaio", 25]]],
+  ["Mozzarella", "latticini", 250, 18, 1, 19, 0, 0.4, [["mozzarella", 125]]],
+  ["Mozzarella light", "latticini", 165, 20, 1, 9, 0, 0.5, [["mozzarella", 125]]],
+  ["Parmigiano Reggiano", "latticini", 390, 33, 0, 28, 0, 1.6, [["cucchiaio grattugiato", 10]]],
+  ["Grana Padano", "latticini", 390, 33, 0, 28, 0, 1.5, [["cucchiaio grattugiato", 10]]],
+  ["Formaggio spalmabile light", "latticini", 160, 7, 5, 12, 0, 0.9, [["cucchiaio", 20]]],
+  ["Formaggio spalmabile", "latticini", 250, 6, 4, 23, 0, 0.8, [["cucchiaio", 20]]],
+  ["Feta", "latticini", 260, 15, 1.5, 21, 0, 2.5, []],
+  ["Stracchino", "latticini", 300, 18, 1.5, 25, 0, 0.8, []],
+  ["Burrata", "latticini", 300, 12, 2, 27, 0, 0.5, [["burrata", 125]]],
+  // Legumi e proteine vegetali
+  ["Ceci secchi", "legumi", 340, 19, 50, 6, 14, 0, []],
+  ["Ceci in scatola (sgocciolati)", "legumi", 120, 7, 16, 2.5, 5, 0.5, [["scatola", 240]]],
+  ["Lenticchie secche", "legumi", 325, 24, 50, 1.5, 13, 0, []],
+  ["Lenticchie in scatola (sgocciolate)", "legumi", 95, 7, 14, 0.5, 5, 0.4, [["scatola", 240]]],
+  ["Fagioli cannellini in scatola", "legumi", 90, 6, 14, 0.5, 6, 0.5, [["scatola", 240]]],
+  ["Fagioli borlotti in scatola", "legumi", 95, 7, 14, 0.6, 6, 0.5, [["scatola", 240]]],
+  ["Piselli (surgelati)", "legumi", 75, 5.5, 11, 0.5, 5, 0.1, []],
+  ["Edamame", "legumi", 120, 11, 9, 5, 5, 0, []],
+  ["Tofu", "legumi", 120, 12, 2, 7, 1, 0, [["panetto", 125]]],
+  ["Hummus", "legumi", 240, 8, 15, 16, 5, 1, [["cucchiaio", 25]]],
+  // Verdure
+  ["Zucchine", "verdure", 17, 1.3, 2.5, 0.3, 1, 0, []],
+  ["Spinaci", "verdure", 23, 3, 1.5, 0.4, 2.5, 0.2, []],
+  ["Broccoli", "verdure", 34, 3, 4.5, 0.4, 3, 0.1, []],
+  ["Pomodori", "verdure", 18, 1, 3, 0.2, 1.2, 0, [["pomodoro", 120]]],
+  ["Pomodorini", "verdure", 20, 1, 3.5, 0.2, 1.2, 0, []],
+  ["Insalata (lattuga)", "verdure", 15, 1.3, 2, 0.2, 1.3, 0, []],
+  ["Rucola", "verdure", 25, 2.5, 2, 0.6, 1.6, 0, []],
+  ["Carote", "verdure", 40, 1, 8, 0.2, 3, 0.1, [["carota", 80]]],
+  ["Peperoni", "verdure", 25, 1, 5, 0.3, 2, 0, []],
+  ["Cetrioli", "verdure", 14, 0.7, 2, 0.1, 0.7, 0, []],
+  ["Melanzane", "verdure", 25, 1, 5, 0.2, 3, 0, []],
+  ["Funghi champignon", "verdure", 22, 3, 1, 0.3, 2, 0, []],
+  ["Cavolfiore", "verdure", 25, 2, 4, 0.3, 2.4, 0, []],
+  ["Fagiolini", "verdure", 31, 2, 5, 0.2, 3, 0, []],
+  ["Asparagi", "verdure", 20, 2.2, 2.5, 0.2, 2, 0, []],
+  ["Cipolla", "verdure", 40, 1, 9, 0.1, 1.7, 0, []],
+  ["Finocchio", "verdure", 15, 1.2, 2, 0.2, 2.2, 0.1, []],
+  ["Verdure miste surgelate", "verdure", 40, 2.5, 6, 0.5, 3.5, 0.1, []],
+  ["Passata di pomodoro", "verdure", 30, 1.5, 5, 0.3, 1.5, 0.3, []],
+  ["Avocado", "verdure", 160, 2, 2, 15, 7, 0, [["mezzo avocado", 70]]],
+  // Frutta
+  ["Banana", "frutta", 89, 1.1, 23, 0.3, 2.6, 0, [["banana", 120]]],
+  ["Mela", "frutta", 52, 0.3, 14, 0.2, 2.4, 0, [["mela", 150]]],
+  ["Pera", "frutta", 57, 0.4, 15, 0.1, 3, 0, [["pera", 160]]],
+  ["Arancia", "frutta", 47, 0.9, 12, 0.1, 2.4, 0, [["arancia", 180]]],
+  ["Kiwi", "frutta", 61, 1.1, 15, 0.5, 3, 0, [["kiwi", 80]]],
+  ["Fragole", "frutta", 32, 0.7, 8, 0.3, 2, 0, []],
+  ["Mirtilli", "frutta", 57, 0.7, 14, 0.3, 2.4, 0, []],
+  ["Frutti di bosco surgelati", "frutta", 45, 1, 9, 0.5, 4, 0, []],
+  ["Uva", "frutta", 69, 0.7, 18, 0.2, 0.9, 0, []],
+  ["Ananas", "frutta", 50, 0.5, 13, 0.1, 1.4, 0, [["fetta", 80]]],
+  ["Pesca", "frutta", 39, 0.9, 10, 0.3, 1.5, 0, [["pesca", 150]]],
+  ["Anguria", "frutta", 30, 0.6, 8, 0.2, 0.4, 0, [["fetta", 250]]],
+  ["Melone", "frutta", 34, 0.8, 8, 0.2, 0.9, 0, [["fetta", 150]]],
+  ["Mandarino", "frutta", 53, 0.8, 13, 0.3, 1.8, 0, [["mandarino", 70]]],
+  ["Datteri", "frutta", 280, 2.5, 75, 0.4, 8, 0, [["dattero", 8]]],
+  ["Uvetta", "frutta", 300, 3, 79, 0.5, 4, 0, [["cucchiaio", 15]]],
+  ["Albicocche secche", "frutta", 240, 3.4, 63, 0.5, 7, 0, [["albicocca", 8]]],
+  // Grassi, frutta secca, semi
+  ["Olio extravergine d'oliva", "grassi", 900, 0, 0, 100, 0, 0, [["cucchiaio", 10], ["cucchiaino", 5]]],
+  ["Burro", "grassi", 750, 0.8, 0.6, 83, 0, 0.1, [["noce", 10]]],
+  ["Burro di arachidi", "grassi", 600, 25, 15, 50, 6, 0.5, [["cucchiaio", 15]]],
+  ["Mandorle", "frutta secca", 600, 21, 10, 52, 12, 0, [["10 mandorle", 12]]],
+  ["Noci", "frutta secca", 650, 15, 7, 65, 7, 0, [["noce", 5]]],
+  ["Nocciole", "frutta secca", 630, 15, 8, 60, 10, 0, [["10 nocciole", 12]]],
+  ["Anacardi", "frutta secca", 580, 18, 30, 44, 3, 0, [["10 anacardi", 15]]],
+  ["Arachidi", "frutta secca", 570, 26, 16, 46, 8, 0, []],
+  ["Pistacchi (sgusciati)", "frutta secca", 560, 20, 28, 45, 10, 0, []],
+  ["Semi di chia", "frutta secca", 486, 17, 42, 31, 34, 0, [["cucchiaio", 10]]],
+  ["Cocco rapè", "frutta secca", 660, 7, 24, 62, 16, 0, [["cucchiaio", 8]]],
+  ["Cioccolato fondente 85%", "dolci", 580, 10, 20, 50, 11, 0, [["quadretto", 5]]],
+  // Integratori, dolcificanti, vari
+  ["Proteine whey (polvere)", "integratori", 380, 78, 6, 5, 0, 0.5, [["misurino", 30]]],
+  ["Proteine isolate (polvere)", "integratori", 370, 88, 2, 1, 0, 0.6, [["misurino", 30]]],
+  ["Maltodestrine", "integratori", 380, 0, 95, 0, 0, 0, [["misurino", 30]]],
+  ["Barretta proteica (media)", "integratori", 380, 30, 35, 12, 10, 0.5, [["barretta", 60]]],
+  ["Miele", "dolci", 304, 0.3, 82, 0, 0, 0, [["cucchiaino", 7]]],
+  ["Marmellata", "dolci", 250, 0.5, 60, 0.1, 1, 0, [["cucchiaino", 10]]],
+  ["Zucchero", "dolci", 400, 0, 100, 0, 0, 0, [["cucchiaino", 5]]],
+  ["Sciroppo d'acero", "dolci", 260, 0, 67, 0, 0, 0, [["cucchiaio", 15]]],
+  ["Cacao amaro", "dolci", 350, 22, 12, 20, 30, 0, [["cucchiaio", 8]]],
+  ["Pizza margherita", "piatti", 270, 11, 33, 10, 2, 1.5, [["pizza intera", 350]]],
+  // Bevande
+  ["Bevanda di avena", "bevande", 45, 1, 7, 1.5, 0.8, 0.1, [["bicchiere", 200]]],
+  ["Bevanda di mandorla", "bevande", 25, 0.5, 2.5, 1.2, 0.3, 0.1, [["bicchiere", 200]]],
+  ["Bevanda di soia", "bevande", 40, 3.3, 1, 2, 0.5, 0.1, [["bicchiere", 200]]],
+  ["Caffè espresso", "bevande", 2, 0.1, 0.3, 0, 0, 0, [["tazzina", 30]]],
+  ["Birra", "bevande", 43, 0.5, 3.5, 0, 0, 0, [["lattina", 330]]],
+  ["Vino rosso", "bevande", 85, 0.1, 2.5, 0, 0, 0, [["bicchiere", 125]]],
+  // Condimenti
+  ["Salsa di soia", "condimenti", 55, 6, 5, 0, 0, 14, [["cucchiaio", 15]]],
+  ["Ketchup", "condimenti", 100, 1.3, 24, 0.2, 0.5, 2.5, [["cucchiaio", 15]]],
+  ["Senape", "condimenti", 70, 4, 6, 4, 2, 2.5, [["cucchiaino", 5]]],
+  ["Aceto balsamico", "condimenti", 90, 0.5, 17, 0, 0, 0, [["cucchiaio", 15]]],
+  ["Pesto alla genovese", "condimenti", 450, 5, 6, 45, 1, 1.5, [["cucchiaio", 20]]]
+];
+// ===== NUCLEO =====
+const APP_VERSION = 1;
+const APP_NAME = 'Quota';           // nome provvisorio: cambialo qui
+const KEY = 'quota_db_v1';
+const KCAL = { p: 4, c: 4, g: 9 };
+const TOL = 0.05;                   // scarto tollerato sulla GIORNATA (5%)
+const TOL_MIN_G = 3;                // ... ma almeno 3 g per macro
+const TOL_MEAL = 0.10;              // scarto tollerato sul SINGOLO PASTO (10%)
+const TOL_MEAL_MIN_G = 5;           // ... ma almeno 5 g per macro
+const WD = ['lun', 'mar', 'mer', 'gio', 'ven', 'sab', 'dom'];
+const WD_LONG = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
+const MONTHS = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+const CATS = ['cereali', 'carne', 'salumi', 'pesce', 'uova', 'latticini', 'legumi', 'verdure', 'frutta', 'grassi', 'frutta secca', 'dolci', 'integratori', 'piatti', 'bevande', 'condimenti', 'altro'];
+
+// --- stato ---
+let DB = null;   // { v, settings, foods, clients, plans:{clientId:{draft,active}}, logs:{clientId:{date:{...}}} }
+let S = { role: 'client', page: 'oggi', date: null, clientId: null, tab: 'piano', dt: 0, q: '', edit: null };
+
+// --- utilità ---
+function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
+function todayISO(d) { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function parseISO(s) { const p = s.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+function addDays(iso, n) { const d = parseISO(iso); d.setDate(d.getDate() + n); return todayISO(d); }
+function wdOf(iso) { return (parseISO(iso).getDay() + 6) % 7; }   // 0 = lunedì
+function fmtDate(iso) { const d = parseISO(iso); return WD_LONG[wdOf(iso)] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()]; }
+function fmtShort(iso) { const d = parseISO(iso); return WD[wdOf(iso)] + ' ' + d.getDate(); }
+function r0(n) { return Math.round(n || 0); }
+function r1(n) { return Math.round((n || 0) * 10) / 10; }
+function it1(n) { return String(r1(n)).replace('.', ','); }
+function it2(n) { return (Math.round((n || 0) * 100) / 100).toFixed(2).replace(/0$/, '').replace('.', ','); }
+function itK(n) { return r0(n).toLocaleString('it-IT'); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function clone(o) { return JSON.parse(JSON.stringify(o)); }
+function sum(arr, f) { return arr.reduce((a, x) => a + (f ? f(x) : x), 0); }
+function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+function num(v, d) { const n = parseFloat(String(v).replace(',', '.')); return isNaN(n) ? (d || 0) : n; }
+function initials(name) { return (name || '?').split(/\s+/).map(w => w[0] || '').join('').slice(0, 2).toUpperCase(); }
+function timeNow() { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+function toMin(hhmm) { const p = (hhmm || '12:00').split(':').map(Number); return p[0] * 60 + (p[1] || 0); }
+
+// --- persistenza (locale; in v2 diventa Firestore per chiave) ---
+function persist() { try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) { toast('Spazio pieno: esporta i dati'); } }
+function load() {
+  try { const raw = localStorage.getItem(KEY); if (raw) DB = JSON.parse(raw); } catch (e) { DB = null; }
+  if (!DB) { DB = freshDB(); seedDemo(); persist(); }
+  if (!DB.settings) DB.settings = {};
+  S.role = DB.settings.role || 'client';
+  S.date = todayISO();
+}
+function freshDB() {
+  return { v: APP_VERSION, settings: { role: 'client' }, foods: baseFoods(), clients: [], plans: {}, logs: {} };
+}
+function baseFoods() {
+  return FOODS_BASE.map((f, i) => ({ id: 'b' + i, name: f[0], cat: f[1], kcal: f[2], p: f[3], c: f[4], g: f[5], fib: f[6], salt: f[7], portions: (f[8] || []).map(p => ({ name: p[0], g: p[1] })), src: 'base' }));
+}
+
+// --- alimenti ---
+function foodById(id) { return DB.foods.find(f => f.id === id); }
+function norm(s) { return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+function searchFoods(q, limit) {
+  q = norm(q).trim(); if (!q) return [];
+  const toks = q.split(/\s+/);
+  const scored = DB.foods.map(f => {
+    const n = norm(f.name);
+    let sc = 0;
+    for (const t of toks) { if (n.startsWith(t)) sc += 3; else if (n.includes(' ' + t)) sc += 2; else if (n.includes(t)) sc += 1; else return null; }
+    if (f.src === 'custom' || f.src === 'off') sc += 0.5;
+    return { f, sc };
+  }).filter(Boolean).sort((a, b) => b.sc - a.sc || a.f.name.localeCompare(b.f.name));
+  return scored.slice(0, limit || 12).map(x => x.f);
+}
+function macrosOf(food, qty) {
+  const k = (qty || 0) / 100;
+  return { kcal: food.kcal * k, p: food.p * k, c: food.c * k, g: food.g * k, fib: (food.fib || 0) * k, salt: (food.salt || 0) * k };
+}
+function zero() { return { kcal: 0, p: 0, c: 0, g: 0, fib: 0, salt: 0 }; }
+function addM(a, b, k) { k = k == null ? 1 : k; return { kcal: a.kcal + b.kcal * k, p: a.p + b.p * k, c: a.c + b.c * k, g: a.g + b.g * k, fib: (a.fib || 0) + (b.fib || 0) * k, salt: (a.salt || 0) + (b.salt || 0) * k }; }
+function sumItems(items) {
+  let t = zero();
+  for (const it of items || []) { const f = foodById(it.foodId); if (f) t = addM(t, macrosOf(f, it.qty)); }
+  return t;
+}
+function kcalOfMacros(m) { return (m.p || 0) * KCAL.p + (m.c || 0) * KCAL.c + (m.g || 0) * KCAL.g; }
+function itemsText(items) {
+  return (items || []).map(it => { const f = foodById(it.foodId); return f ? f.name + ' ' + it1(it.qty) + ' g' : '?'; }).join(', ');
+}
+
+// --- piano ---
+// plan = { id, name, mode:'macro'|'meals', dayTypes:[dt], note, status, sentAt, updatedAt }
+// dt   = { id, name, days:[0..6], targets:{p,c,g,salt,water}, slots:[slot], note }
+// slot = { id, name, time, pct, m:null|{p,c,g}, examples:[{id,name,items:[{foodId,qty}]}] }
+function newPlan(name) {
+  return {
+    id: uid(), name: name || 'Piano', mode: 'macro', note: '', status: 'draft', sentAt: null, updatedAt: Date.now(),
+    dayTypes: [newDayType('Giorno tipo', [0, 1, 2, 3, 4, 5, 6])]
+  };
+}
+function newDayType(name, days) {
+  return {
+    id: uid(), name: name, days: days || [], targets: { p: 150, c: 250, g: 65, salt: 5, water: 2.5 }, note: '',
+    slots: [
+      { id: uid(), name: 'Colazione', time: '07:30', pct: 20, m: null, examples: [] },
+      { id: uid(), name: 'Spuntino', time: '10:30', pct: 10, m: null, examples: [] },
+      { id: uid(), name: 'Pranzo', time: '13:00', pct: 30, m: null, examples: [] },
+      { id: uid(), name: 'Spuntino', time: '17:00', pct: 12, m: null, examples: [] },
+      { id: uid(), name: 'Cena', time: '20:30', pct: 28, m: null, examples: [] }
+    ]
+  };
+}
+function dtKcal(dt) { return kcalOfMacros(dt.targets); }
+function slotQuota(dt, slot, mode) {
+  // quota del pasto: macro esplicite se impostate, altrimenti proporzionali alla percentuale
+  const T = dt.targets;
+  let m;
+  if (mode === 'meals' && slot.examples && slot.examples.length) {
+    const e = sumItems(slot.examples[0].items); m = { p: e.p, c: e.c, g: e.g };
+  } else if (slot.m) m = { p: slot.m.p, c: slot.m.c, g: slot.m.g };
+  else { const k = (slot.pct || 0) / 100; m = { p: T.p * k, c: T.c * k, g: T.g * k }; }
+  return { p: m.p, c: m.c, g: m.g, kcal: kcalOfMacros(m) };
+}
+function dtSlotTotals(dt, mode) {
+  let t = { p: 0, c: 0, g: 0, kcal: 0, pct: 0 };
+  for (const s of dt.slots) { const q = slotQuota(dt, s, mode); t.p += q.p; t.c += q.c; t.g += q.g; t.kcal += q.kcal; t.pct += s.pct || 0; }
+  return t;
+}
+function dayTypeFor(plan, iso, log) {
+  if (!plan || !plan.dayTypes.length) return null;
+  if (log && log.dayTypeId) { const d = plan.dayTypes.find(x => x.id === log.dayTypeId); if (d) return d; }
+  const w = wdOf(iso);
+  return plan.dayTypes.find(d => (d.days || []).includes(w)) || plan.dayTypes[0];
+}
+function planFor(clientId, which) { const p = DB.plans[clientId]; return p ? p[which || 'active'] : null; }
+function ensureDraft(clientId) {
+  if (!DB.plans[clientId]) DB.plans[clientId] = { draft: null, active: null };
+  if (!DB.plans[clientId].draft) DB.plans[clientId].draft = DB.plans[clientId].active ? clone(DB.plans[clientId].active) : newPlan();
+  return DB.plans[clientId].draft;
+}
+function sendPlan(clientId) {
+  const d = ensureDraft(clientId);
+  d.status = 'sent'; d.sentAt = Date.now(); d.updatedAt = Date.now();
+  DB.plans[clientId].active = clone(d);
+  persist();
+}
+function planDirty(clientId) {
+  const p = DB.plans[clientId]; if (!p || !p.draft) return false;
+  if (!p.active) return true;
+  const a = clone(p.active), b = clone(p.draft); a.status = b.status = ''; a.sentAt = b.sentAt = 0; a.updatedAt = b.updatedAt = 0;
+  return JSON.stringify(a) !== JSON.stringify(b);
+}
+
+// --- diario (log) ---
+// logs[clientId][date] = { dayTypeId, meals:{slotId:{status:'example'|'custom'|'skipped', exIdx, items, note, at}}, water (L), saltAdded (g) }
+function logFor(clientId, iso, create) {
+  if (!DB.logs[clientId]) DB.logs[clientId] = {};
+  let l = DB.logs[clientId][iso];
+  if (!l && create) { l = { dayTypeId: null, meals: {}, water: 0, saltAdded: 0 }; DB.logs[clientId][iso] = l; }
+  return l || null;
+}
+function mealReal(slot, entry) {
+  if (!entry || entry.status === 'skipped') return zero();
+  if (entry.status === 'example') { const ex = (slot.examples || [])[entry.exIdx || 0]; return ex ? sumItems(ex.items) : zero(); }
+  return sumItems(entry.items);
+}
+function mealEntry(log, slot) { return log && log.meals ? log.meals[slot.id] : null; }
+function tolOf(target) { return Math.max(TOL_MIN_G, Math.abs(target) * TOL); }
+function within(real, target, isKcal) { const t = isKcal ? Math.abs(target) * TOL : tolOf(target); return Math.abs(real - target) <= t; }
+function tolMeal(target) { return Math.max(TOL_MEAL_MIN_G, Math.abs(target) * TOL_MEAL); }
+function withinMeal(real, target) { return Math.abs(real - target) <= tolMeal(target); }
+// Adatta le quantità di un esempio alla quota del pasto, toccando l'alimento che pesa di più su ogni macro
+function fitExampleToQuota(items, q) {
+  for (let iter = 0; iter < 10; iter++) {
+    let changed = false;
+    for (const k of ['c', 'p', 'g']) {
+      const m = sumItems(items); const diff = q[k] - m[k];
+      if (Math.abs(diff) <= Math.max(1.5, tolMeal(q[k]) * 0.25)) continue;
+      let best = -1, bestV = 0;
+      items.forEach((it, i) => { const f = foodById(it.foodId); if (!f) return; const v = macrosOf(f, it.qty)[k]; const dens = f[k] / 100; const spec = f[k] / Math.max(1, f.p + f.c + f.g); const score = Math.max(v, 1) * spec; if (dens >= 0.08 && score > bestV) { bestV = score; best = i; } });
+      if (best < 0) continue;
+      const f = foodById(items[best].foodId); const dens = f[k] / 100;
+      const nq = clamp(Math.round((items[best].qty + diff / dens) / 5) * 5, 5, 1500);
+      if (nq !== items[best].qty) { items[best].qty = nq; changed = true; }
+    }
+    if (!changed) break;
+  }
+  return items;
+}
+
+// Analisi della giornata: per ogni slot quota, reale, stato; quota adattata del prossimo pasto; totali.
+function dayAnalysis(plan, dt, log) {
+  const mode = plan.mode;
+  const out = { slots: [], real: zero(), planned: zero(), plannedSoFar: { p: 0, c: 0, g: 0, kcal: 0 }, nextIdx: -1, water: log ? (log.water || 0) : 0, saltAdded: log ? (log.saltAdded || 0) : 0 };
+  let carry = { p: 0, c: 0, g: 0 };
+  dt.slots.forEach((slot, i) => {
+    const q = slotQuota(dt, slot, mode);
+    const e = mealEntry(log, slot);
+    const logged = !!e;
+    const real = mealReal(slot, e);
+    const row = { slot, q, e, logged, real, verdict: null, adj: null, diffs: null };
+    out.planned = addM(out.planned, { kcal: q.kcal, p: q.p, c: q.c, g: q.g, fib: 0, salt: 0 });
+    if (logged) {
+      out.real = addM(out.real, real);
+      row.diffs = { p: real.p - q.p, c: real.c - q.c, g: real.g - q.g, kcal: real.kcal - q.kcal };
+      if (e.status === 'skipped') row.verdict = { k: 'skip', text: 'Saltato' };
+      else {
+        const offs = ['p', 'c', 'g'].filter(k => !withinMeal(real[k], q[k]));
+        if (!offs.length) row.verdict = { k: 'ok', text: 'In linea' };
+        else { const k = offs.sort((a, b) => Math.abs(row.diffs[b]) - Math.abs(row.diffs[a]))[0]; const d = row.diffs[k]; row.verdict = { k: 'mod', text: macroName(k) + ' ' + (d > 0 ? '+' : '−') + r0(Math.abs(d)) + ' g' }; }
+      }
+      carry = { p: carry.p + q.p - real.p, c: carry.c + q.c - real.c, g: carry.g + q.g - real.g };
+      out.plannedSoFar = { p: out.plannedSoFar.p + q.p, c: out.plannedSoFar.c + q.c, g: out.plannedSoFar.g + q.g, kcal: out.plannedSoFar.kcal + q.kcal };
+    } else if (out.nextIdx < 0) {
+      out.nextIdx = i;
+      const adj = { p: q.p + carry.p, c: q.c + carry.c, g: q.g + carry.g };
+      const changed = ['p', 'c', 'g'].filter(k => Math.abs(carry[k]) >= TOL_MIN_G);
+      row.adj = { p: Math.max(0, adj.p), c: Math.max(0, adj.c), g: Math.max(0, adj.g), kcal: kcalOfMacros({ p: Math.max(0, adj.p), c: Math.max(0, adj.c), g: Math.max(0, adj.g) }), carry, changed };
+    }
+    out.slots.push(row);
+  });
+  out.targets = { p: dt.targets.p, c: dt.targets.c, g: dt.targets.g, kcal: dtKcal(dt), salt: dt.targets.salt, water: dt.targets.water };
+  out.salt = (out.real.salt || 0) + out.saltAdded;
+  out.loggedCount = out.slots.filter(r => r.logged).length;
+  out.closed = out.loggedCount === dt.slots.length;
+  return out;
+}
+function macroName(k) { return { p: 'Proteine', c: 'Carboidrati', g: 'Grassi', kcal: 'Calorie' }[k]; }
+function macroColor(k) { return { p: 'var(--blue)', c: 'var(--orange)', g: 'var(--olive)', kcal: 'var(--ink)' }[k]; }
+
+// Riepilogo di un giorno per tabelle settimanali
+function daySummary(clientId, iso) {
+  const plan = planFor(clientId); if (!plan) return null;
+  const log = logFor(clientId, iso);
+  const dt = dayTypeFor(plan, iso, log); if (!dt) return null;
+  const a = dayAnalysis(plan, dt, log);
+  return { iso, dt, a, logged: a.loggedCount > 0 };
+}
+
+// --- clienti ---
+function clientById(id) { return DB.clients.find(c => c.id === id); }
+function selfClient() { return DB.clients.find(c => c.self); }
+function addClient(name, weight, self) {
+  const c = { id: uid(), name: name, weight: weight || null, self: !!self, createdAt: Date.now() };
+  DB.clients.push(c); persist(); return c;
+}
+
+// --- toast / foglio ---
+let _toastT = null;
+function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(_toastT); _toastT = setTimeout(() => t.classList.remove('on'), 2200); }
+function sheetOpen(html) { document.getElementById('sheetBody').innerHTML = html; document.getElementById('sheet').classList.add('open'); document.getElementById('sheetbg').classList.add('open'); }
+function sheetClose() { document.getElementById('sheet').classList.remove('open'); document.getElementById('sheetbg').classList.remove('open'); document.getElementById('sheetBody').innerHTML = ''; }
+function askConfirm(text, okLabel, fn) {
+  window._cf = fn;
+  sheetOpen('<div class="stack"><div style="font-size:15px">' + esc(text) + '</div><div class="g2"><button class="btn" onclick="sheetClose()">Annulla</button><button class="btn p" onclick="sheetClose();window._cf()">' + esc(okLabel || 'Conferma') + '</button></div></div>');
+}
+
+// --- dati demo ---
+function seedDemo() {
+  const me = addClient('Tu (questo telefono)', 78, true);
+  const demo = addClient('Marco B. (demo)', 78, false);
+  const f = n => { const x = DB.foods.find(z => z.name === n); if (!x) throw new Error('food ' + n); return x.id; };
+  const plan = newPlan('Ricomposizione, fase 2');
+  const all = plan.dayTypes[0]; all.name = 'Allenamento'; all.days = [0, 2, 4];
+  all.targets = { p: 170, c: 280, g: 70, salt: 5, water: 3 };
+  all.slots[0] = Object.assign(all.slots[0], { name: 'Colazione', time: '07:30', pct: 20, examples: [{ id: uid(), name: 'Avena e yogurt', items: [{ foodId: f("Fiocchi d'avena"), qty: 60 }, { foodId: f('Yogurt greco 0%'), qty: 170 }, { foodId: f('Mirtilli'), qty: 100 }, { foodId: f('Mandorle'), qty: 15 }] }] });
+  all.slots[1] = Object.assign(all.slots[1], { name: 'Spuntino', time: '10:30', pct: 10, examples: [{ id: uid(), name: 'Pane, bresaola e avocado', items: [{ foodId: f('Pane integrale'), qty: 60 }, { foodId: f('Bresaola'), qty: 50 }, { foodId: f('Avocado'), qty: 30 }] }] });
+  all.slots[2] = Object.assign(all.slots[2], { name: 'Pranzo', time: '13:00', pct: 29, examples: [{ id: uid(), name: 'Riso e pollo', items: [{ foodId: f('Riso basmati (crudo)'), qty: 110 }, { foodId: f('Petto di pollo'), qty: 180 }, { foodId: f('Zucchine'), qty: 200 }, { foodId: f("Olio extravergine d'oliva"), qty: 10 }] }] });
+  all.slots[3] = Object.assign(all.slots[3], { name: 'Pre-allenamento', time: '17:00', pct: 15, examples: [{ id: uid(), name: 'Banana e whey', items: [{ foodId: f('Banana'), qty: 120 }, { foodId: f('Proteine whey (polvere)'), qty: 30 }, { foodId: f('Gallette di riso'), qty: 16 }, { foodId: f('Burro di arachidi'), qty: 15 }] }] });
+  all.slots[4] = Object.assign(all.slots[4], { name: 'Cena', time: '20:30', pct: 26, examples: [{ id: uid(), name: 'Merluzzo e patate', items: [{ foodId: f('Merluzzo'), qty: 200 }, { foodId: f('Patate'), qty: 350 }, { foodId: f('Insalata (lattuga)'), qty: 80 }, { foodId: f("Olio extravergine d'oliva"), qty: 15 }] }] });
+  const rip = clone(all); rip.id = uid(); rip.name = 'Riposo'; rip.days = [1, 3, 5, 6];
+  rip.targets = { p: 170, c: 200, g: 70, salt: 5, water: 3 };
+  rip.slots.forEach(s => { s.id = uid(); s.examples.forEach(e => e.id = uid()); });
+  const scale = { "Fiocchi d'avena": 45, 'Pane integrale': 45, 'Riso basmati (crudo)': 80, 'Gallette di riso': 8, 'Patate': 200, 'Banana': 100 };
+  rip.slots.forEach(s => s.examples.forEach(e => e.items.forEach(it => { const n = foodById(it.foodId).name; if (scale[n] != null) it.qty = scale[n]; })));
+  rip.slots[3].name = 'Merenda'; rip.slots[3].pct = 12; rip.slots[2].pct = 30; rip.slots[4].pct = 28;
+  plan.dayTypes = [all, rip];
+  plan.dayTypes.forEach(dt => dt.slots.forEach(s => s.examples.forEach(e => fitExampleToQuota(e.items, slotQuota(dt, s, 'macro')))));
+  plan.note = "I carboidrati restano concentrati intorno all'allenamento. Se salti un pasto, recupera i macro nel successivo.";
+  DB.plans[demo.id] = { draft: clone(plan), active: clone(plan) }; DB.plans[demo.id].active.status = 'sent'; DB.plans[demo.id].active.sentAt = Date.now() - 6e8;
+  const mine = clone(plan); mine.dayTypes.forEach(d => { d.id = uid(); d.slots.forEach(s => { s.id = uid(); s.examples.forEach(e => e.id = uid()); }); });
+  DB.plans[me.id] = { draft: clone(mine), active: clone(mine) }; DB.plans[me.id].active.status = 'sent'; DB.plans[me.id].active.sentAt = Date.now() - 6e8;
+  // 7 giorni di diario demo per Marco
+  const seeds = [[1, 1, 1, 1, 1], [1, 0.9, 1.15, 1, 1.2], [1, 1, 1, 1, 0.95], [1, 1, 1, 1, 1], [1, 1, 0.9, 1, 1.05], [1.1, 1, 1.2, 1.3, 1], [1, 1.05, 0.85, 0, 0]];
+  const waters = [3.1, 2.4, 2.9, 3.1, 3.0, 2.7, 1.25], salts = [1.2, 2.6, 1.3, 1.5, 1.2, 1.9, 0.8];
+  for (let i = 6; i >= 0; i--) {
+    const iso = addDays(todayISO(), -i);
+    const dt = dayTypeFor(DB.plans[demo.id].active, iso, null);
+    const log = logFor(demo.id, iso, true);
+    log.water = waters[6 - i]; log.saltAdded = salts[6 - i];
+    dt.slots.forEach((s, si) => {
+      const k = seeds[6 - i][si];
+      if (k === 0) return;
+      if (k === 1) log.meals[s.id] = { status: 'example', exIdx: 0, items: [], note: '', at: s.time };
+      else log.meals[s.id] = { status: 'custom', items: s.examples[0].items.map(it => ({ foodId: it.foodId, qty: Math.round(it.qty * k) })), note: '', at: s.time };
+    });
+  }
+}
+// ===== UI CONDIVISA =====
+const ICO = {
+  oggi: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>',
+  piano: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="16" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>',
+  prog: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l5-6 4 3 7-9"/></svg>',
+  set: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>',
+  clienti: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14c2.8 0 5 2 5 5"/></svg>',
+  food: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18M9 3v18M5 9h4M15 3c-2 0-3 2-3 5s1 4 3 4v9M15 3c2 0 3 2 3 5s-1 4-3 4"/></svg>',
+  check: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5l2.5 2.5L11 4.5"/></svg>',
+  x: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4l6 6M10 4l-6 6"/></svg>',
+  back: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+  barcode: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7V5h3M17 5h3v2M20 17v2h-3M7 19H4v-2M8 8v8M11 8v8M14 8v8M17 8v8"/></svg>'
+};
+const TABS = {
+  client: [['oggi', 'Oggi', 'oggi'], ['piano', 'Piano', 'piano'], ['prog', 'Progressi', 'prog'], ['set', 'Impostazioni', 'set']],
+  nutri: [['clienti', 'Clienti', 'clienti'], ['alimenti', 'Alimenti', 'food'], ['set', 'Impostazioni', 'set']]
+};
+
+function go(page, extra) { S.page = page; Object.assign(S, extra || {}); window.scrollTo(0, 0); render(); }
+function setRole(r) { S.role = r; DB.settings.role = r; persist(); S.page = r === 'client' ? 'oggi' : 'clienti'; S.clientId = null; render(); }
+
+function render() {
+  document.getElementById('brand').textContent = APP_NAME;
+  document.getElementById('roleTag').textContent = S.role === 'client' ? 'Cliente' : 'Nutrizionista';
+  const tabs = TABS[S.role];
+  const main = tabs.find(t => t[0] === (S.page === 'segna' ? 'oggi' : S.page === 'cliente' ? 'clienti' : S.page));
+  document.getElementById('tabs').innerHTML = tabs.map(t => '<button class="' + (main && main[0] === t[0] ? 'on' : '') + '" onclick="go(\'' + t[0] + '\')" aria-label="' + t[1] + '">' + ICO[t[2]] + t[1] + '</button>').join('');
+  const m = document.getElementById('main');
+  let html = '';
+  try {
+    if (S.role === 'client') {
+      if (S.page === 'oggi') html = pageOggi();
+      else if (S.page === 'segna') html = pageSegna();
+      else if (S.page === 'piano') html = pagePianoCliente();
+      else if (S.page === 'prog') html = pageProgressi();
+      else html = pageSettings();
+    } else {
+      if (S.page === 'clienti') html = pageClienti();
+      else if (S.page === 'cliente') html = pageCliente();
+      else if (S.page === 'alimenti') html = pageAlimenti();
+      else html = pageSettings();
+    }
+  } catch (e) { console.error(e); html = '<div class="card"><h2>Qualcosa non va</h2><div class="mut" style="margin-top:8px">' + esc(e.message) + '</div><button class="btn" style="margin-top:12px" onclick="go(\'set\')">Impostazioni</button></div>'; }
+  m.innerHTML = html;
+  if (window._afterRender) { const f = window._afterRender; window._afterRender = null; f(); }
+}
+
+// --- pezzi riusabili ---
+function barHtml(val, max, color, lg) { const pct = max > 0 ? clamp(val / max * 100, 0, 100) : 0; return '<div class="bar' + (lg ? ' lg' : '') + '"><i style="width:' + pct.toFixed(1) + '%;background:' + (color || 'var(--green)') + '"></i></div>'; }
+function macroCard(a) {
+  const T = a.targets, R = a.real;
+  const cells = ['p', 'c', 'g'].map(k => {
+    const left = T[k] - R[k];
+    return '<div><div class="small mut">' + macroName(k) + '</div><div class="row" style="gap:3px;align-items:baseline;margin:2px 0 6px"><span class="num">' + r0(R[k]) + '</span><span class="mut small">/ ' + r0(T[k]) + ' g</span></div>' + barHtml(R[k], T[k], macroColor(k)) + '<div class="small mut" style="margin-top:5px">' + (left >= 0 ? 'mancano ' + r0(left) : 'oltre di ' + r0(-left)) + '</div></div>';
+  }).join('');
+  const left = T.kcal - R.kcal;
+  return '<div class="card"><div class="g3">' + cells + '</div><div class="row" style="border-top:1px solid var(--line2);margin-top:14px;padding-top:10px;color:var(--ink2)"><span><b>' + itK(R.kcal) + '</b> di ' + itK(T.kcal) + ' kcal</span><span class="right">' + (left >= 0 ? 'restano ' + itK(left) : 'oltre di ' + itK(-left)) + '</span></div></div>';
+}
+function quotaPills(q) { return '<span class="pill b">' + itK(q.kcal) + ' kcal</span><span class="pill">P ' + r0(q.p) + ' g</span><span class="pill">C ' + r0(q.c) + ' g</span><span class="pill">G ' + r0(q.g) + ' g</span>'; }
+function verdictChip(v) { if (!v) return ''; const cls = v.k === 'ok' ? 'ok' : v.k === 'mod' ? 'warn' : ''; return '<span class="chip ' + cls + '">' + esc(v.text) + '</span>'; }
+function weekTable(clientId, endIso, opts) {
+  opts = opts || {};
+  let rows = '';
+  const days = [];
+  for (let i = 6; i >= 0; i--) days.push(addDays(endIso, -i));
+  let inLine = 0, logged = 0;
+  for (const iso of days) {
+    const s = daySummary(clientId, iso);
+    const isToday = iso === todayISO();
+    if (!s) { rows += '<div class="tbl-row"><div class="b">' + fmtShort(iso) + '</div></div>'; continue; }
+    const T = s.a.targets, R = s.a.real;
+    const open = isToday && !s.a.closed;
+    const vals = [['kcal', R.kcal, T.kcal, true], ['p', R.p, T.p], ['c', R.c, T.c], ['g', R.g, T.g]];
+    let dayOk = s.logged && !open;
+    const cells = vals.map(v => {
+      const off = s.logged && !open && !within(v[1], v[2], v[3]);
+      if (off) dayOk = false;
+      return '<td><div class="cell' + (off ? ' off' : '') + (open || !s.logged ? ' todo' : '') + '">' + (s.logged ? (v[0] === 'kcal' ? itK(v[1]) : r0(v[1])) : '—') + '</div></td>';
+    }).join('');
+    const saltOff = s.logged && !open && T.salt && s.a.salt > T.salt * 1.1;
+    const waterOff = s.logged && !open && T.water && s.a.water < T.water * 0.9;
+    const extra = '<td><div class="cell' + (saltOff ? ' off' : '') + (open || !s.logged ? ' todo' : '') + '">' + (s.logged ? it1(s.a.salt) : '—') + '</div></td><td><div class="cell' + (waterOff ? ' off' : '') + (open || !s.logged ? ' todo' : '') + '">' + (s.logged ? it2(s.a.water) : '—') + '</div></td>';
+    if (s.logged && !open) { logged++; if (dayOk && !saltOff && !waterOff) inLine++; }
+    rows += '<tr' + (opts.onDay ? ' style="cursor:pointer" onclick="' + opts.onDay + '(\'' + iso + '\')"' : '') + '><td><div class="b">' + fmtShort(iso) + '</div><div class="small mut">' + (open ? 'in corso' : esc(s.dt.name)) + '</div></td>' + cells + extra + '</tr>';
+  }
+  const head = '<tr><th>Giorno</th><th class="n">kcal</th><th class="n">P</th><th class="n">C</th><th class="n">G</th><th class="n">Sale g</th><th class="n">Acqua L</th></tr>';
+  return { html: '<div class="scrollx"><table class="tbl" style="min-width:520px">' + head + rows + '</table></div>', inLine, logged };
+}
+function daysStrip(clientId) {
+  let h = '';
+  for (let i = 6; i >= 0; i--) {
+    const iso = addDays(todayISO(), -i);
+    const l = logFor(clientId, iso);
+    const has = l && Object.keys(l.meals || {}).length;
+    h += '<button class="' + (iso === S.date ? 'on' : '') + (has ? ' dot' : '') + '" onclick="S.date=\'' + iso + '\';render()" aria-label="' + fmtDate(iso) + '"><span class="small">' + WD[wdOf(iso)] + '</span><span class="b" style="font-size:15px">' + parseISO(iso).getDate() + '</span></button>';
+  }
+  return '<div class="days7">' + h + '</div>';
+}
+
+// ===== LATO CLIENTE =====
+function noPlanHtml() {
+  return '<div class="card stack"><h2>Nessun piano ancora</h2><div class="mut">Quando il nutrizionista ti invia il piano lo trovi qui. In questa versione di prova puoi crearlo tu stesso: Impostazioni → passa a Nutrizionista → cliente «Tu (questo telefono)».</div><button class="btn" onclick="go(\'set\')">Impostazioni</button></div>';
+}
+function pageOggi() {
+  const me = selfClient(); if (!me) return noPlanHtml();
+  const plan = planFor(me.id); if (!plan) return noPlanHtml();
+  const log = logFor(me.id, S.date);
+  const dt = dayTypeFor(plan, S.date, log);
+  const a = dayAnalysis(plan, dt, log);
+  const isToday = S.date === todayISO();
+  let h = '<div class="stack">';
+  h += '<div class="row" style="align-items:flex-end"><div><div class="small mut">' + fmtDate(S.date) + '</div><h1>' + (isToday ? 'Oggi' : fmtShort(S.date)) + '</h1></div><button class="chip dark right" style="border:0" onclick="pickDayType()">' + esc(dt.name) + ' ▾</button></div>';
+  h += daysStrip(me.id);
+  h += macroCard(a);
+  // acqua e sale
+  const T = a.targets;
+  if (T.water || T.salt) {
+    h += '<div class="g2">';
+    if (T.water) h += '<div class="card"><div class="small mut">Acqua</div><div class="row" style="gap:4px;align-items:baseline;margin:2px 0 8px"><span class="num">' + it2(a.water) + '</span><span class="mut small">/ ' + it1(T.water) + ' L</span></div>' + barHtml(a.water, T.water, 'var(--water)') + '<div class="row" style="margin-top:10px;gap:6px"><button class="btn soft grow sm" onclick="addWater(0.25)">+ 250 ml</button><button class="btn sm" style="min-width:44px" onclick="addWater(-0.25)" aria-label="Togli 250 ml">−</button></div></div>';
+    if (T.salt) h += '<div class="card"><div class="small mut">Sale</div><div class="row" style="gap:4px;align-items:baseline;margin:2px 0 2px"><span class="num">' + it1(a.salt) + '</span><span class="mut small">/ ' + it1(T.salt) + ' g</span></div><div class="small mut" style="margin-bottom:8px">' + it1(a.real.salt) + ' dagli alimenti · ' + it1(a.saltAdded) + ' aggiunto</div><div class="row" style="gap:6px"><button class="btn grow sm" onclick="addSalt(0.5)">+ 0,5 g aggiunto</button><button class="btn sm" style="min-width:44px" onclick="addSalt(-0.5)" aria-label="Togli 0,5 g">−</button></div></div>';
+    h += '</div>';
+  }
+  // pasti
+  a.slots.forEach((r, i) => {
+    const s = r.slot;
+    if (r.logged) {
+      const cls = r.e.status === 'skipped' ? 'skip' : (r.verdict && r.verdict.k === 'mod' ? 'mod' : '');
+      const note = r.e.status === 'skipped' ? 'Saltato' : (r.e.status === 'example' ? "L'esempio del piano · " : '') + (r.verdict ? r.verdict.text : '');
+      h += '<button class="card row" style="text-align:left;width:100%" onclick="openMealMenu(\'' + s.id + '\')"><span class="tick ' + cls + '">' + (r.e.status === 'skipped' ? ICO.x : ICO.check) + '</span><div class="grow"><div class="b">' + esc(s.name) + ' <span class="mut" style="font-weight:400">· ' + esc(s.time) + '</span></div><div class="small ' + (cls === 'mod' ? 'warn' : cls === 'skip' ? 'mut' : 'ok') + '">' + esc(note) + '</div></div><span class="b">' + itK(r.real.kcal) + '</span></button>';
+    } else if (i === a.nextIdx) {
+      const q = r.adj || r.q;
+      const ex = (s.examples || [])[0];
+      h += '<div class="card meal next stack" style="gap:10px"><div class="row" style="align-items:baseline"><h2>' + esc(s.name) + '</h2><span class="mut">' + esc(s.time) + '</span></div><div class="wrap">' + quotaPills(q) + '</div>';
+      if (r.adj && r.adj.changed.length) {
+        const parts = r.adj.changed.map(k => { const c = r.adj.carry[k]; return (c > 0 ? 'mancano ' : 'hai già ') + r0(Math.abs(c)) + ' g di ' + macroName(k).toLowerCase() + (c > 0 ? '' : ' in più'); });
+        h += '<div class="hint warn">Dai pasti precedenti ' + parts.join(', ') + ': la quota di questo pasto è già adattata.</div>';
+      }
+      if (ex) h += '<div class="small" style="color:var(--ink2)"><b style="color:var(--ink)">Esempio del piano:</b> ' + esc(itemsText(ex.items)) + '</div>';
+      if (s.note) h += '<div class="hint">' + esc(s.note) + '</div>';
+      if (ex) h += '<button class="btn p wide" onclick="logExample(\'' + s.id + '\')">Ho mangiato l\'esempio</button>';
+      h += '<div class="g2"><button class="btn' + (ex ? '' : ' p') + '" onclick="startSegna(\'' + s.id + '\')">' + (ex ? 'Ho mangiato altro' : 'Segna cosa ho mangiato') + '</button><button class="btn" onclick="logSkip(\'' + s.id + '\')">Saltato</button></div></div>';
+    } else {
+      h += '<button class="card row" style="text-align:left;width:100%;color:var(--ink2)" onclick="startSegna(\'' + s.id + '\')"><span class="tick todo"></span><div class="grow"><b style="color:var(--ink)">' + esc(s.name) + '</b> · ' + esc(s.time) + '<div class="small">quota ' + itK(r.q.kcal) + ' kcal · P ' + r0(r.q.p) + ' · C ' + r0(r.q.c) + ' · G ' + r0(r.q.g) + '</div></div></button>';
+    }
+  });
+  if (a.closed) h += '<div class="hint ok">Giornata completa: ' + a.slots.filter(r => r.verdict && r.verdict.k === 'ok').length + ' pasti su ' + a.slots.length + ' in linea.</div>';
+  if (plan.note) h += '<div class="card"><div class="small mut b" style="margin-bottom:4px">Nota del nutrizionista</div>' + esc(plan.note) + '</div>';
+  h += '</div>';
+  return h;
+}
+function pickDayType() {
+  const me = selfClient(); const plan = planFor(me.id); const log = logFor(me.id, S.date);
+  const cur = dayTypeFor(plan, S.date, log);
+  sheetOpen('<div class="stack"><h2>Che giornata è?</h2><div class="small mut">Normalmente lo decide il calendario del piano. Puoi cambiarlo per questo giorno.</div>' + plan.dayTypes.map(d => '<button class="btn' + (d.id === cur.id ? ' p' : '') + '" onclick="setDayType(\'' + d.id + '\')">' + esc(d.name) + ' <span class="small" style="opacity:.8">· ' + itK(dtKcal(d)) + ' kcal · ' + d.days.map(x => WD[x]).join(' ') + '</span></button>').join('') + '</div>');
+}
+function setDayType(id) { const me = selfClient(); const log = logFor(me.id, S.date, true); log.dayTypeId = id; persist(); sheetClose(); render(); }
+function addWater(d) { const me = selfClient(); const log = logFor(me.id, S.date, true); log.water = clamp(Math.round(((log.water || 0) + d) * 100) / 100, 0, 10); persist(); render(); }
+function addSalt(d) { const me = selfClient(); const log = logFor(me.id, S.date, true); log.saltAdded = clamp(r1((log.saltAdded || 0) + d), 0, 30); persist(); render(); }
+function logExample(slotId) { const me = selfClient(); const log = logFor(me.id, S.date, true); log.meals[slotId] = { status: 'example', exIdx: 0, items: [], note: '', at: timeNow() }; persist(); toast('Segnato'); render(); }
+function logSkip(slotId) { const me = selfClient(); const log = logFor(me.id, S.date, true); log.meals[slotId] = { status: 'skipped', items: [], note: '', at: timeNow() }; persist(); render(); }
+function unlog(slotId) { const me = selfClient(); const log = logFor(me.id, S.date, true); delete log.meals[slotId]; persist(); sheetClose(); render(); }
+function openMealMenu(slotId) {
+  const me = selfClient(); const plan = planFor(me.id); const log = logFor(me.id, S.date); const dt = dayTypeFor(plan, S.date, log);
+  const s = dt.slots.find(x => x.id === slotId); const e = log.meals[slotId];
+  const real = mealReal(s, e); const q = slotQuota(dt, s, plan.mode);
+  let body = '<h2>' + esc(s.name) + '</h2><div class="small mut">segnato alle ' + esc(e.at || '') + '</div>';
+  if (e.status !== 'skipped') body += '<div class="small" style="color:var(--ink2)">' + esc(e.status === 'example' ? itemsText(((s.examples || [])[e.exIdx || 0] || {}).items) : itemsText(e.items)) + '</div><div class="list">' + ['kcal', 'p', 'c', 'g'].map(k => '<div class="kv"><span>' + macroName(k) + '</span><span><b>' + r0(real[k]) + '</b> <span class="mut">/ ' + r0(q[k]) + (k === 'kcal' ? '' : ' g') + '</span></span></div>').join('') + '</div>';
+  if (e.note) body += '<div class="hint">' + esc(e.note) + '</div>';
+  body += '<div class="g2"><button class="btn" onclick="sheetClose();startSegna(\'' + slotId + '\')">Modifica</button><button class="btn danger" onclick="unlog(\'' + slotId + '\')">Togli la segnatura</button></div>';
+  sheetOpen('<div class="stack">' + body + '</div>');
+}
+
+// --- segna il pasto ---
+function startSegna(slotId) {
+  const me = selfClient(); const plan = planFor(me.id); const log = logFor(me.id, S.date); const dt = dayTypeFor(plan, S.date, log);
+  const s = dt.slots.find(x => x.id === slotId);
+  const e = log && log.meals[slotId];
+  let items = [];
+  if (e && e.status === 'custom') items = clone(e.items);
+  else if (e && e.status === 'example') items = clone((s.examples[e.exIdx || 0] || { items: [] }).items);
+  S.edit = { slotId, items, note: e ? (e.note || '') : '' };
+  go('segna');
+}
+function recentFoods(clientId, excludeIds, n) {
+  const seen = new Map();
+  const logs = DB.logs[clientId] || {};
+  Object.keys(logs).sort().reverse().forEach(d => Object.values(logs[d].meals || {}).forEach(m => (m.items || []).forEach(it => { if (!seen.has(it.foodId)) seen.set(it.foodId, it.qty); })));
+  const out = [];
+  for (const [id, qty] of seen) { if (excludeIds.includes(id)) continue; const f = foodById(id); if (f) out.push({ f, qty }); if (out.length >= n) break; }
+  return out;
+}
+function pageSegna() {
+  const me = selfClient(); const plan = planFor(me.id); const log = logFor(me.id, S.date); const dt = dayTypeFor(plan, S.date, log);
+  const ed = S.edit; const s = dt.slots.find(x => x.id === ed.slotId);
+  const a = dayAnalysis(plan, dt, log);
+  const row = a.slots.find(r => r.slot.id === s.id);
+  const q = (row && row.adj) ? row.adj : slotQuota(dt, s, plan.mode);
+  const tot = sumItems(ed.items);
+  let h = '<div class="stack">';
+  h += '<button class="btn link" style="align-self:flex-start" onclick="go(\'oggi\')">' + ICO.back + ' Oggi</button>';
+  h += '<div><div class="small mut">' + esc(s.name) + ' · ' + esc(s.time) + ' · ' + fmtShort(S.date) + '</div><h1 style="font-size:24px">Cosa hai mangiato?</h1></div>';
+  // quota
+  const bars = ['p', 'c', 'g'].map(k => { const v = tot[k], t = q[k], d = v - t, ok = withinMeal(v, t); return '<div style="margin-bottom:10px"><div class="row small" style="margin-bottom:4px"><span><b>' + macroName(k) + '</b> ' + r0(v) + ' / ' + r0(t) + ' g</span><span class="right b ' + (ok ? 'ok' : 'warn') + '">' + (ok ? 'ok' : d < 0 ? 'mancano ' + r0(-d) + ' g' : '+' + r0(d) + ' g') + '</span></div>' + barHtml(v, t, macroColor(k)) + '</div>'; }).join('');
+  const allOk = ['p', 'c', 'g'].every(k => withinMeal(tot[k], q[k]));
+  h += '<div class="card"><div class="row" style="margin-bottom:4px"><span class="b">La tua quota per questo pasto</span><span class="mut right">' + itK(tot.kcal) + ' / ' + itK(q.kcal) + ' kcal</span></div>' + (row && row.adj && row.adj.changed.length ? '<div class="small mut" style="margin-bottom:12px">Comprende quello che manca o avanza dai pasti precedenti.</div>' : '<div style="height:8px"></div>') + bars + '<div class="hint' + (allOk ? ' ok' : '') + '">' + (ed.items.length ? (allOk ? 'In linea con la quota del pasto.' : 'Puoi salvarlo lo stesso: la differenza passa al pasto dopo.') : 'Aggiungi gli alimenti: vedi subito quanto ti avvicini alla quota.') + '</div></div>';
+  // alimenti
+  h += '<div class="card" style="padding-top:4px"><div class="list" style="padding:0">';
+  ed.items.forEach((it, i) => {
+    const f = foodById(it.foodId); if (!f) return;
+    const m = macrosOf(f, it.qty);
+    h += '<div class="food"><div class="grow"><div class="b">' + esc(f.name) + '</div><div class="small mut">' + r0(m.kcal) + ' kcal · P ' + r0(m.p) + ' · C ' + r0(m.c) + ' · G ' + r0(m.g) + '</div></div><div class="qty"><button onclick="segQty(' + i + ',-1)" aria-label="Meno">−</button><span onclick="segQtyAsk(' + i + ')" role="button" style="cursor:pointer">' + it1(it.qty) + ' g</span><button onclick="segQty(' + i + ',1)" aria-label="Più">+</button></div><button class="btn xs" style="min-width:30px;padding:4px 7px" onclick="segRemove(' + i + ')" aria-label="Rimuovi">✕</button></div>';
+  });
+  h += '</div>';
+  h += '<div class="row" style="margin-top:' + (ed.items.length ? 12 : 6) + 'px;gap:8px"><div class="srch grow"><label class="lab" for="segSearch" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Aggiungi un alimento</label><input class="inp" id="segSearch" type="search" placeholder="+ Aggiungi un alimento" autocomplete="off" oninput="segSearch(this.value)"><div class="res" id="segRes" hidden></div></div><button class="btn" style="width:46px;padding:0" aria-label="Codice a barre" onclick="barcodeStart(\'segna\')">' + ICO.barcode + '</button></div>';
+  const ex = (s.examples || [])[0];
+  const rec = recentFoods(me.id, ed.items.map(x => x.foodId), 5);
+  let chips = '';
+  if (ex && !ed.items.length) chips += '<button class="btn soft xs" onclick="segFromExample()">Parti dall\'esempio del piano</button>';
+  rec.forEach(r => { chips += '<button class="btn xs" onclick="segAdd(\'' + r.f.id + '\',' + r.qty + ')">+ ' + esc(r.f.name) + ' ' + it1(r.qty) + ' g</button>'; });
+  if (chips) h += '<div class="wrap" style="margin-top:10px;align-items:center"><span class="small mut">Veloci:</span>' + chips + '</div>';
+  h += '</div>';
+  h += '<div><label class="lab" for="segNote">Nota per il nutrizionista <span class="mut" style="font-weight:400">(facoltativa)</span></label><textarea class="inp" id="segNote" rows="2" placeholder="Es. avevo poco tempo" oninput="S.edit.note=this.value">' + esc(ed.note) + '</textarea></div>';
+  h += '<button class="btn p wide" style="font-size:15px" onclick="segSave()"' + (ed.items.length ? '' : ' disabled') + '>Salva il pasto</button>';
+  h += '</div>';
+  return h;
+}
+function segStep(f) { return f.kcal >= 450 || f.cat === 'integratori' || f.cat === 'condimenti' ? 5 : 10; }
+function segQty(i, dir) { const it = S.edit.items[i]; const f = foodById(it.foodId); it.qty = Math.max(0, it.qty + dir * segStep(f)); if (it.qty === 0) S.edit.items.splice(i, 1); render(); }
+function segQtyAsk(i) { const it = S.edit.items[i]; const f = foodById(it.foodId); qtySheet(f, it.qty, v => { it.qty = v; render(); }); }
+function segRemove(i) { S.edit.items.splice(i, 1); render(); }
+function segAdd(foodId, qty) { S.edit.items.push({ foodId, qty }); render(); }
+function segFromExample() { const me = selfClient(); const plan = planFor(me.id); const dt = dayTypeFor(plan, S.date, logFor(me.id, S.date)); const s = dt.slots.find(x => x.id === S.edit.slotId); S.edit.items = clone(s.examples[0].items); render(); }
+function segSearch(q) {
+  const box = document.getElementById('segRes'); const res = searchFoods(q, 10);
+  if (!q.trim()) { box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = res.map(f => '<button onclick="segPick(\'' + f.id + '\')"><span>' + esc(f.name) + '</span><span class="mut small">' + r0(f.kcal) + ' kcal/100 g</span></button>').join('') || '<button onclick="foodNewFrom(\'segna\')">Non c\'è: <b>crea «' + esc(q.trim()) + '»</b></button>';
+}
+function segPick(id) { const f = foodById(id); qtySheet(f, null, v => { S.edit.items.push({ foodId: id, qty: v }); render(); }); }
+function qtySheet(f, cur, fn) {
+  window._qfn = fn;
+  const ports = (f.portions || []).map(p => '<button class="btn" onclick="qtyDone(' + p.g + ')">' + esc(p.name) + ' <span class="mut small">· ' + p.g + ' g</span></button>').join('');
+  const m = macrosOf(f, 100);
+  sheetOpen('<div class="stack"><div><h2>' + esc(f.name) + '</h2><div class="small mut">per 100 g: ' + r0(m.kcal) + ' kcal · P ' + r1(m.p) + ' · C ' + r1(m.c) + ' · G ' + r1(m.g) + '</div></div>' + (ports ? '<div class="g2">' + ports + '</div>' : '') + '<div class="row"><input class="inp n grow" id="qtyInp" type="number" inputmode="decimal" step="1" min="0" value="' + (cur != null ? cur : (f.portions && f.portions[0] ? f.portions[0].g : 100)) + '" onkeydown="if(event.key===\'Enter\')qtyDone()"><span class="mut">grammi</span></div><button class="btn p wide" onclick="qtyDone()">Conferma</button></div>');
+  window._afterRender = null;
+  setTimeout(() => { const i = document.getElementById('qtyInp'); if (i) { i.focus(); i.select(); } }, 50);
+}
+function qtyDone(v) { if (v == null) v = num(document.getElementById('qtyInp').value, 0); sheetClose(); if (v > 0) window._qfn(r1(v)); }
+function segSave() {
+  const me = selfClient(); const log = logFor(me.id, S.date, true);
+  log.meals[S.edit.slotId] = { status: 'custom', items: clone(S.edit.items), note: S.edit.note || '', at: timeNow() };
+  persist(); S.edit = null; toast('Pasto salvato'); go('oggi');
+}
+
+// --- piano (lettura, cliente) ---
+function planView(plan, opts) {
+  opts = opts || {};
+  let h = '';
+  plan.dayTypes.forEach(dt => {
+    const T = dt.targets;
+    h += '<div class="card stack" style="gap:10px"><div class="row" style="align-items:baseline"><h2>' + esc(dt.name) + '</h2><span class="mut small">' + (dt.days.length ? dt.days.map(x => WD[x]).join(' ') : 'nessun giorno') + '</span></div>';
+    h += '<div class="gauto">' + [['Calorie', itK(dtKcal(dt)), 'kcal'], ['Proteine', r0(T.p), 'g'], ['Carboidrati', r0(T.c), 'g'], ['Grassi', r0(T.g), 'g'], ['Sale', it1(T.salt), 'g'], ['Acqua', it1(T.water), 'L']].map(x => '<div style="background:var(--bg);border-radius:10px;padding:8px 10px"><div class="small mut">' + x[0] + '</div><div><span class="num" style="font-size:20px">' + x[1] + '</span> <span class="mut small">' + x[2] + '</span></div></div>').join('') + '</div>';
+    h += '<div class="dist">' + dt.slots.map((s, i) => '<div style="width:' + (s.pct || 0) + '%;background:' + distColor(i) + '" title="' + esc(s.name) + '">' + ((s.pct || 0) >= 16 ? esc(s.name.slice(0, 9)) + ' ' : '') + (s.pct || 0) + '%</div>').join('') + '</div>';
+    dt.slots.forEach((s, i) => {
+      const q = slotQuota(dt, s, plan.mode);
+      h += '<div style="border-top:1px solid var(--line2);padding-top:10px"><div class="row"><span style="width:10px;height:10px;border-radius:3px;background:' + distColor(i) + '"></span><b>' + esc(s.name) + '</b><span class="mut">' + esc(s.time) + '</span></div><div class="wrap" style="margin-top:6px">' + quotaPills(q) + '</div>';
+      (s.examples || []).forEach(ex => { const m = sumItems(ex.items); h += '<div class="small" style="margin-top:6px;color:var(--ink2)"><b style="color:var(--ink)">' + esc(ex.name || 'Esempio') + ':</b> ' + esc(itemsText(ex.items)) + ' <span class="mut">· ' + r0(m.kcal) + ' kcal</span></div>'; });
+      if (s.note) h += '<div class="hint" style="margin-top:6px">' + esc(s.note) + '</div>';
+      h += '</div>';
+    });
+    if (dt.note) h += '<div class="hint">' + esc(dt.note) + '</div>';
+    h += '</div>';
+  });
+  if (plan.note) h += '<div class="card"><div class="small mut b" style="margin-bottom:4px">Nota generale</div>' + esc(plan.note) + '</div>';
+  return h;
+}
+function distColor(i) { return ['#1E6B47', '#3D5A80', '#16201B', '#9A4A12', '#5E4B8B', '#2F7F8A', '#7A5230'][i % 7]; }
+function pagePianoCliente() {
+  const me = selfClient(); const plan = me && planFor(me.id); if (!plan) return noPlanHtml();
+  return '<div class="stack"><div><div class="small mut">Piano ricevuto il ' + new Date(plan.sentAt || plan.updatedAt).toLocaleDateString('it-IT') + '</div><h1>' + esc(plan.name) + '</h1><div class="mut small" style="margin-top:4px">' + (plan.mode === 'meals' ? 'Il piano va seguito pasto per pasto.' : 'Conta rispettare i macronutrienti e la distribuzione: i pasti sono esempi.') + '</div></div>' + planView(plan) + '</div>';
+}
+function pageProgressi() {
+  const me = selfClient(); const plan = me && planFor(me.id); if (!plan) return noPlanHtml();
+  const w = weekTable(me.id, todayISO());
+  return '<div class="stack"><h1>Progressi</h1><div class="card"><div class="row" style="align-items:baseline;margin-bottom:10px"><span class="b">Ultimi 7 giorni</span><span class="mut small right">in arancione: oltre il 5% dall\'obiettivo</span></div>' + w.html + '<div class="row" style="margin-top:12px"><span class="num">' + w.inLine + '</span><span class="mut">giorni in linea su ' + w.logged + ' giornate chiuse</span></div></div><div class="card"><div class="b" style="margin-bottom:6px">Prossimamente</div><div class="mut small">Peso e misure, andamento su più settimane, confronto per tipo di giornata.</div></div></div>';
+}
+
+// --- impostazioni (entrambi i ruoli) ---
+function pageSettings() {
+  const me = selfClient();
+  let h = '<div class="stack"><h1>Impostazioni</h1>';
+  h += '<div class="card stack"><div class="b">Chi usa questo telefono</div><div class="seg"><button class="' + (S.role === 'client' ? 'on' : '') + '" onclick="setRole(\'client\')">Cliente</button><button class="' + (S.role === 'nutri' ? 'on' : '') + '" onclick="setRole(\'nutri\')">Nutrizionista</button></div><div class="small mut">In questa versione di prova i due ruoli convivono sullo stesso telefono. Con gli account (prossima versione) ognuno vedrà solo il suo.</div></div>';
+  if (me) h += '<div class="card stack"><div class="b">Il tuo profilo (cliente)</div><div class="g2"><div><label class="lab small" for="meName">Nome</label><input class="inp" id="meName" value="' + esc(me.name) + '" onchange="me_set(\'name\',this.value)"></div><div><label class="lab small" for="meW">Peso (kg)</label><input class="inp n" id="meW" type="number" inputmode="decimal" value="' + (me.weight || '') + '" onchange="me_set(\'weight\',num(this.value))"></div></div></div>';
+  h += '<div class="card stack"><div class="b">I tuoi dati</div><div class="small mut">Tutto resta su questo telefono. Esporta un file di sicurezza o per spostare i dati.</div><div class="g2"><button class="btn" onclick="exportJSON()">Esporta</button><button class="btn" onclick="importJSON()">Importa</button></div><button class="btn danger" onclick="askConfirm(\'Cancella tutti i dati e ricarica i dati demo?\',\'Sì, azzera\',resetAll)">Azzera e ricarica la demo</button></div>';
+  h += '<div class="card"><div class="b">Alimenti</div><div class="small mut" style="margin-top:4px">' + DB.foods.filter(f => f.src === 'base').length + ' alimenti di base con valori medi indicativi, ' + DB.foods.filter(f => f.src !== 'base').length + ' aggiunti. I prodotti confezionati arrivano da Open Food Facts tramite codice a barre.</div></div>';
+  h += '<div class="small mut" style="text-align:center">' + APP_NAME + ' · versione di prova ' + APP_VERSION + '</div></div>';
+  return h;
+}
+function me_set(k, v) { const me = selfClient(); me[k] = v; persist(); toast('Salvato'); }
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(DB, null, 1)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'quota-' + todayISO() + '.json'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+function importJSON() {
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'application/json,.json';
+  inp.onchange = () => { const f = inp.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { try { const d = JSON.parse(r.result); if (!d.foods || !d.clients) throw new Error('formato'); DB = d; persist(); load(); toast('Dati importati'); render(); } catch (e) { toast('File non valido'); } }; r.readAsText(f); };
+  inp.click();
+}
+function resetAll() { localStorage.removeItem(KEY); DB = null; load(); S.page = S.role === 'client' ? 'oggi' : 'clienti'; render(); toast('Dati demo ricaricati'); }
+// ===== LATO NUTRIZIONISTA =====
+function clientLine(c) {
+  const plan = planFor(c.id);
+  if (!plan) return { text: 'Nessun piano inviato', warn: true, adh: '—' };
+  const s = daySummary(c.id, todayISO());
+  const w = weekTable(c.id, addDays(todayISO(), -1));
+  const adh = w.logged ? w.inLine + '/' + w.logged : '—';
+  if (!s || !s.logged) {
+    // da quanti giorni non segna?
+    let n = 0; for (let i = 1; i <= 14; i++) { const l = logFor(c.id, addDays(todayISO(), -i)); if (l && Object.keys(l.meals || {}).length) break; n++; }
+    return { text: n >= 2 ? 'Niente segnato da ' + (n + 1) + ' giorni' : 'Niente segnato oggi', warn: n >= 2, adh };
+  }
+  const a = s.a;
+  const mods = a.slots.filter(r => r.verdict && r.verdict.k === 'mod'), skips = a.slots.filter(r => r.verdict && r.verdict.k === 'skip');
+  let t = a.loggedCount + ' di ' + a.slots.length + ' pasti';
+  if (mods.length) t += ' · ' + mods.length + ' fuori quota'; if (skips.length) t += ' · ' + skips.length + ' saltat' + (skips.length > 1 ? 'i' : 'o');
+  if (!mods.length && !skips.length) t += ' · tutto in linea';
+  const T = a.targets;
+  const warn = mods.length >= 2 || (T.water && a.water < T.water * 0.4 && toMin(timeNow()) > 15 * 60);
+  return { text: t, warn, adh };
+}
+function pageClienti() {
+  let h = '<div class="stack"><div class="row"><h1>Clienti</h1><button class="btn sm right" onclick="newClientSheet()">+ Nuovo cliente</button></div>';
+  if (!DB.clients.length) h += '<div class="card mut">Nessun cliente. Aggiungine uno.</div>';
+  const list = DB.clients.slice().sort((a, b) => (b.self ? 1 : 0) - (a.self ? 1 : 0) || a.name.localeCompare(b.name));
+  list.forEach(c => {
+    const l = clientLine(c);
+    h += '<button class="clientcard" onclick="openClient(\'' + c.id + '\')"><span class="avatar">' + esc(initials(c.name)) + '</span><div class="grow"><div class="b">' + esc(c.name) + (c.self ? ' <span class="chip" style="font-size:10px;padding:2px 7px">questo telefono</span>' : '') + '</div><div class="small ' + (l.warn ? 'warn' : 'mut') + '">' + esc(l.text) + '</div></div><div style="text-align:right"><div class="b">' + l.adh + '</div><div class="small mut">giorni in linea</div></div></button>';
+  });
+  h += '<div class="small mut" style="margin-top:4px">«Giorni in linea»: giornate chiuse degli ultimi 7 giorni con calorie, macro, sale e acqua entro la tolleranza.</div></div>';
+  return h;
+}
+function newClientSheet() {
+  sheetOpen('<div class="stack"><h2>Nuovo cliente</h2><div><label class="lab" for="ncName">Nome</label><input class="inp" id="ncName" placeholder="Nome e cognome"></div><div><label class="lab" for="ncW">Peso (kg)</label><input class="inp n" id="ncW" type="number" inputmode="decimal" placeholder="es. 72"></div><button class="btn p wide" onclick="newClientDo()">Aggiungi</button></div>');
+  setTimeout(() => { const i = document.getElementById('ncName'); if (i) i.focus(); }, 50);
+}
+function newClientDo() { const n = document.getElementById('ncName').value.trim(); if (!n) { toast('Serve il nome'); return; } const c = addClient(n, num(document.getElementById('ncW').value) || null, false); sheetClose(); openClient(c.id); }
+function openClient(id) { S.clientId = id; S.tab = planFor(id) ? 'mon' : 'piano'; S.dt = 0; S.exEdit = null; go('cliente'); }
+
+function pageCliente() {
+  const c = clientById(S.clientId); if (!c) return pageClienti();
+  let h = '<div class="stack">';
+  h += '<button class="btn link" style="align-self:flex-start" onclick="go(\'clienti\')">' + ICO.back + ' Clienti</button>';
+  h += '<div class="row"><span class="avatar">' + esc(initials(c.name)) + '</span><div><h1 style="font-size:24px">' + esc(c.name) + '</h1><div class="small mut">' + (c.weight ? c.weight + ' kg · ' : '') + (planFor(c.id) ? 'piano «' + esc(planFor(c.id).name) + '» inviato il ' + new Date(planFor(c.id).sentAt).toLocaleDateString('it-IT') : 'nessun piano inviato') + '</div></div></div>';
+  h += '<div class="seg">' + [['mon', 'Monitoraggio'], ['piano', 'Piano'], ['dati', 'Dati']].map(t => '<button class="' + (S.tab === t[0] ? 'on' : '') + '" onclick="S.tab=\'' + t[0] + '\';render()">' + t[1] + '</button>').join('') + '</div>';
+  if (S.tab === 'mon') h += monitorHtml(c);
+  else if (S.tab === 'piano') h += planEditorHtml(c);
+  else h += clientDataHtml(c);
+  h += '</div>';
+  return h;
+}
+function clientDataHtml(c) {
+  return '<div class="card stack"><div class="g2"><div><label class="lab small" for="cName">Nome</label><input class="inp" id="cName" value="' + esc(c.name) + '" onchange="clientSet(\'name\',this.value)"></div><div><label class="lab small" for="cW">Peso (kg)</label><input class="inp n" id="cW" type="number" inputmode="decimal" value="' + (c.weight || '') + '" onchange="clientSet(\'weight\',num(this.value)||null)"></div></div><div class="small mut">Il peso serve per i g/kg nel piano. Nella prossima versione il cliente lo aggiorna dal suo telefono.</div>' + (c.self ? '<div class="hint">Questo è il cliente collegato alla parte Cliente di questo telefono.</div>' : '<button class="btn danger" onclick="askConfirm(\'Eliminare ' + esc(c.name).replace(/'/g, '') + ' con piano e diario?\',\'Elimina\',deleteClient)">Elimina cliente</button>') + '</div>';
+}
+function clientSet(k, v) { const c = clientById(S.clientId); c[k] = v; persist(); toast('Salvato'); }
+function deleteClient() { DB.clients = DB.clients.filter(c => c.id !== S.clientId); delete DB.plans[S.clientId]; delete DB.logs[S.clientId]; persist(); go('clienti'); }
+
+// --- monitoraggio ---
+function monitorHtml(c) {
+  const plan = planFor(c.id);
+  if (!plan) return '<div class="card mut">Nessun piano inviato: il monitoraggio parte quando il cliente ha un piano.</div>';
+  const iso = S.date;
+  const log = logFor(c.id, iso); const dt = dayTypeFor(plan, iso, log); const a = dayAnalysis(plan, dt, log);
+  const isToday = iso === todayISO();
+  const nowM = toMin(timeNow());
+  // previsto a quest'ora
+  let expK = 0, exp = { p: 0, c: 0, g: 0 };
+  a.slots.forEach(r => { if (!isToday || toMin(r.slot.time) <= nowM + 30 || r.logged) { expK += r.q.kcal; exp.p += r.q.p; exp.c += r.q.c; exp.g += r.q.g; } });
+  let h = '<div class="row" style="justify-content:space-between"><button class="btn sm" onclick="S.date=addDays(S.date,-1);render()" aria-label="Giorno prima">‹</button><div style="text-align:center"><div class="b">' + fmtDate(iso) + '</div><div class="small mut">' + esc(dt.name) + (isToday ? ' · oggi' : '') + '</div></div><button class="btn sm" onclick="S.date=addDays(S.date,1);render()" aria-label="Giorno dopo"' + (isToday ? ' disabled' : '') + '>›</button></div>';
+  if (!isToday) h += '<button class="btn link" style="align-self:center" onclick="S.date=todayISO();render()">Torna a oggi</button>';
+  if (!a.loggedCount) h += '<div class="card mut">Niente segnato in questa giornata.</div>';
+  const T = a.targets;
+  const dcell = (v, t) => { const d = v - t; const off = !within(v, t); return '<span class="' + (off ? 'warn b' : 'mut') + '">' + (d >= 0 ? '+' : '−') + r0(Math.abs(d)) + '</span>'; };
+  h += '<div class="gauto"><div class="card"><div class="small mut">Calorie ' + (isToday && !a.closed ? 'finora' : '') + '</div><div class="num">' + itK(a.real.kcal) + '</div><div class="small mut">' + (isToday && !a.closed ? "a quest'ora previste " : 'previste ') + itK(expK) + '</div></div>';
+  h += '<div class="card"><div class="small mut">Macro ' + (isToday && !a.closed ? "a quest'ora" : '') + '</div><div class="stack" style="gap:3px;margin-top:6px;font-size:13px">' + ['p', 'c', 'g'].map(k => '<div class="row"><span>' + macroName(k)[0] + ' ' + r0(a.real[k]) + ' / ' + r0(exp[k]) + ' g</span><span class="right">' + dcell(a.real[k], exp[k]) + '</span></div>').join('') + '</div></div>';
+  h += '<div class="card"><div class="small mut">Sale</div><div class="num">' + it1(a.salt) + ' g</div><div class="small mut">obiettivo ' + it1(T.salt) + ' g · ' + it1(a.saltAdded) + ' aggiunto</div></div>';
+  h += '<div class="card"><div class="small mut">Acqua</div><div class="num">' + it2(a.water) + ' L</div><div class="small mut">obiettivo ' + it1(T.water) + ' L</div></div></div>';
+  // pasti
+  const maxK = Math.max(1, ...a.slots.map(r => Math.max(r.q.kcal, r.real.kcal)));
+  h += '<div class="card"><div class="row" style="margin-bottom:10px"><span class="b" style="font-size:15px">Pasto per pasto</span><span class="small mut right"><span style="display:inline-block;width:12px;height:8px;border-radius:2px;background:#D5DAD3"></span> quota · <span style="display:inline-block;width:12px;height:8px;border-radius:2px;background:var(--green)"></span> mangiato</span></div><div class="list">';
+  a.slots.forEach(r => {
+    const s = r.slot;
+    const txt = !r.logged ? '' : r.e.status === 'skipped' ? 'Saltato' : r.e.status === 'example' ? "L'esempio del piano: " + itemsText((s.examples[r.e.exIdx || 0] || {}).items) : itemsText(r.e.items);
+    h += '<div class="stack" style="gap:6px"><div class="row" style="align-items:flex-start"><div class="grow"><div class="b">' + esc(s.name) + ' <span class="mut" style="font-weight:400">· ' + esc(s.time) + '</span></div><div class="small mut">' + (r.logged && r.e.at ? 'segnato alle ' + esc(r.e.at) : 'non ancora segnato') + '</div></div><div style="flex-shrink:0;text-align:right">' + (r.logged ? verdictChip(r.verdict) : '<span class="chip">Da segnare</span>') + (r.logged && r.diffs && r.e.status !== 'skipped' ? '<div class="small mut" style="margin-top:4px">P ' + fmtD(r.diffs.p) + ' · C ' + fmtD(r.diffs.c) + ' · G ' + fmtD(r.diffs.g) + '</div>' : '') + '</div></div><div class="row" style="gap:8px"><div style="height:10px;border-radius:999px;background:#D5DAD3;width:' + (r.q.kcal / maxK * 70).toFixed(0) + '%;min-width:4px;flex-shrink:0"></div><span class="small mut">quota ' + itK(r.q.kcal) + '</span></div><div class="row" style="gap:8px"><div style="height:10px;border-radius:999px;background:' + (r.verdict && r.verdict.k === 'mod' ? 'var(--warn2)' : 'var(--green)') + ';width:' + (r.logged ? (r.real.kcal / maxK * 70).toFixed(0) : 0) + '%;min-width:4px;flex-shrink:0;' + (r.logged ? '' : 'background:var(--line2)') + '"></div><span class="small b">' + (r.logged ? itK(r.real.kcal) : '—') + '</span></div>' + (txt ? '<div class="small" style="color:var(--ink2)">' + esc(txt) + '</div>' : '') + (r.logged && r.e.note ? '<div class="hint" style="padding:6px 8px">«' + esc(r.e.note) + '»</div>' : '') + '</div>';
+  });
+  h += '</div></div>';
+  const w = weekTable(c.id, isToday ? todayISO() : iso, { onDay: 'monGoDay' });
+  h += '<div class="card"><div class="row" style="margin-bottom:10px;align-items:baseline"><span class="b" style="font-size:15px">Ultimi 7 giorni</span><span class="small mut right">in arancione: oltre il 5% dall\'obiettivo · tocca un giorno</span></div>' + w.html + '<div class="small mut" style="margin-top:8px">' + w.inLine + ' giorni in linea su ' + w.logged + ' chiusi.</div></div>';
+  return h;
+}
+function fmtD(d) { return (d >= 0 ? '+' : '−') + r0(Math.abs(d)); }
+function monGoDay(iso) { S.date = iso; render(); }
+
+// --- editor del piano ---
+function planEditorHtml(c) {
+  const d = ensureDraft(c.id);
+  if (S.dt >= d.dayTypes.length) S.dt = 0;
+  const dt = d.dayTypes[S.dt];
+  const dirty = planDirty(c.id);
+  let h = '<div class="card stack" style="gap:10px"><div class="row"><input class="inp grow" value="' + esc(d.name) + '" placeholder="Nome del piano" onchange="pe(\'name\',this.value)" aria-label="Nome del piano"><span class="chip ' + (dirty ? 'warn' : 'ok') + '">' + (dirty ? (planFor(c.id) ? 'Modifiche non inviate' : 'Bozza') : 'Inviato') + '</span></div>';
+  h += '<div class="seg"><button class="' + (d.mode === 'macro' ? 'on' : '') + '" onclick="pe(\'mode\',\'macro\')">Segue i macronutrienti</button><button class="' + (d.mode === 'meals' ? 'on' : '') + '" onclick="pe(\'mode\',\'meals\')">Segue i pasti esatti</button></div>';
+  h += '<div class="small mut">' + (d.mode === 'macro' ? 'Il cliente deve rispettare macro e distribuzione; i pasti sono esempi. Le quote dei pasti vengono dalle percentuali.' : 'Il cliente deve seguire il primo esempio di ogni pasto: la quota del pasto è il suo esempio.') + '</div>';
+  h += '<div class="g2"><button class="btn" onclick="previewPlan()">Vedi come lo vede ' + esc(c.name.split(' ')[0]) + '</button><button class="btn p" onclick="askConfirm(\'Inviare il piano a ' + esc(c.name).replace(/'/g, '') + '? Da quel momento lo vede nella sua app.\',\'Invia\',doSend)"' + (dirty ? '' : ' disabled') + '>Invia il piano</button></div></div>';
+  // tipi di giornata
+  h += '<div class="tabs2">' + d.dayTypes.map((x, i) => '<button class="' + (i === S.dt ? 'on' : '') + '" onclick="S.dt=' + i + ';S.exEdit=null;render()">' + esc(x.name) + ' <span class="small" style="opacity:.75">· ' + (x.days.length ? x.days.map(w => WD[w]).join(' ') : 'nessun giorno') + '</span></button>').join('') + '<button class="btn ghost sm" onclick="dtAdd()">+ Tipo di giornata</button></div>';
+  if (!dt) return h;
+  const T = dt.targets; const kcal = dtKcal(dt); const w = c.weight;
+  h += '<div class="card stack" style="gap:10px"><div class="row"><input class="inp grow" value="' + esc(dt.name) + '" onchange="dte(\'name\',this.value)" aria-label="Nome del tipo di giornata">' + (d.dayTypes.length > 1 ? '<button class="btn sm danger" onclick="dtDel()">Elimina</button>' : '') + '</div>';
+  h += '<div class="wrap">' + WD.map((n, i) => { const on = dt.days.includes(i); const used = !on && d.dayTypes.some((x, j) => j !== S.dt && x.days.includes(i)); return '<button class="btn sm' + (on ? ' p' : '') + '" style="min-width:48px' + (used ? ';opacity:.5' : '') + '" onclick="dtDay(' + i + ')">' + n + '</button>'; }).join('') + '</div>';
+  h += '<h3 style="margin-top:4px">Obiettivi della giornata</h3><div class="gauto">';
+  [['p', 'Proteine', 'g'], ['c', 'Carboidrati', 'g'], ['g', 'Grassi', 'g']].forEach(x => { h += '<div><label class="lab small" for="t_' + x[0] + '">' + x[1] + ' (g)</label><input class="inp n" id="t_' + x[0] + '" type="number" inputmode="decimal" value="' + T[x[0]] + '" onchange="tgt(\'' + x[0] + '\',this.value)"><div class="small mut" style="margin-top:3px">' + (w ? it1(T[x[0]] / w) + ' g/kg · ' : '') + r0(T[x[0]] * KCAL[x[0]]) + ' kcal</div></div>'; });
+  h += '<div><div class="lab small">Calorie</div><div class="inp" style="background:var(--bg);border-color:var(--bg);text-align:right"><b>' + itK(kcal) + '</b></div><div class="small mut" style="margin-top:3px">P ' + r0(T.p * 4 / kcal * 100) + '% · C ' + r0(T.c * 4 / kcal * 100) + '% · G ' + r0(T.g * 9 / kcal * 100) + '%</div></div>';
+  h += '<div><label class="lab small" for="t_salt">Sale (g)</label><input class="inp n" id="t_salt" type="number" inputmode="decimal" step="0.5" value="' + T.salt + '" onchange="tgt(\'salt\',this.value)"><div class="small mut" style="margin-top:3px">0 = non chiederlo</div></div>';
+  h += '<div><label class="lab small" for="t_water">Acqua (L)</label><input class="inp n" id="t_water" type="number" inputmode="decimal" step="0.25" value="' + T.water + '" onchange="tgt(\'water\',this.value)"><div class="small mut" style="margin-top:3px">0 = non chiederla</div></div></div>';
+  // distribuzione
+  const tot = dtSlotTotals(dt, d.mode);
+  h += '<h3 style="margin-top:6px">Distribuzione nella giornata</h3>';
+  h += '<div class="dist">' + dt.slots.map((s, i) => '<div style="width:' + (s.pct || 0) + '%;background:' + distColor(i) + '" title="' + esc(s.name) + '">' + ((s.pct || 0) >= 16 ? esc(s.name.slice(0, 9)) + ' ' : '') + (s.pct || 0) + '%</div>').join('') + '</div>';
+  if (d.mode === 'macro' && Math.round(tot.pct) !== 100) h += '<div class="notice">Le percentuali sommano a ' + r0(tot.pct) + '%, non 100%.</div>';
+  const hasOverride = dt.slots.some(s => s.m);
+  if (d.mode === 'macro' && hasOverride) { const diff = ['p', 'c', 'g'].filter(k => Math.abs(tot[k] - T[k]) > 2); if (diff.length) h += '<div class="notice">Con i pasti personalizzati i totali non tornano: ' + diff.map(k => macroName(k) + ' ' + r0(tot[k]) + ' su ' + r0(T[k]) + ' g').join(', ') + '.</div>'; }
+  h += '<div class="scrollx"><table class="tbl" style="min-width:600px"><tr><th></th><th>Pasto</th><th>Ora</th><th class="n">%</th><th class="n">kcal</th><th class="n">P</th><th class="n">C</th><th class="n">G</th><th></th></tr>';
+  dt.slots.forEach((s, i) => {
+    const q = slotQuota(dt, s, d.mode);
+    const mcells = s.m ? ['p', 'c', 'g'].map(k => '<td class="n"><input class="inp n" style="width:64px" type="number" inputmode="decimal" value="' + r0(s.m[k]) + '" onchange="slotM(' + i + ',\'' + k + '\',this.value)" aria-label="' + macroName(k) + '"></td>').join('') : '<td class="n">' + r0(q.p) + '</td><td class="n">' + r0(q.c) + '</td><td class="n">' + r0(q.g) + '</td>';
+    h += '<tr><td><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:' + distColor(i) + '"></span></td><td><input class="inp" style="width:130px" value="' + esc(s.name) + '" onchange="slotE(' + i + ',\'name\',this.value)" aria-label="Nome pasto"></td><td><input class="inp" style="width:78px" type="time" value="' + esc(s.time) + '" onchange="slotE(' + i + ',\'time\',this.value)" aria-label="Ora"></td><td class="n"><input class="inp n" style="width:60px" type="number" inputmode="numeric" value="' + (s.pct || 0) + '" onchange="slotE(' + i + ',\'pct\',num(this.value))" aria-label="Percentuale"' + (s.m ? ' disabled' : '') + '></td><td class="n b">' + itK(q.kcal) + '</td>' + mcells + '<td style="white-space:nowrap"><button class="btn xs" onclick="slotMove(' + i + ',-1)" aria-label="Su"' + (i === 0 ? ' disabled' : '') + '>↑</button> <button class="btn xs" onclick="slotMove(' + i + ',1)" aria-label="Giù"' + (i === dt.slots.length - 1 ? ' disabled' : '') + '>↓</button> <button class="btn xs" onclick="slotToggleM(' + i + ')">' + (s.m ? 'proporzionale' : 'personalizza') + '</button> <button class="btn xs danger" onclick="slotDel(' + i + ')" aria-label="Elimina pasto">✕</button></td></tr>';
+  });
+  h += '<tr><td></td><td class="b">Totale</td><td></td><td class="n b">' + r0(tot.pct) + '%</td><td class="n b">' + itK(tot.kcal) + '</td><td class="n b">' + r0(tot.p) + '</td><td class="n b">' + r0(tot.c) + '</td><td class="n b">' + r0(tot.g) + '</td><td></td></tr></table></div>';
+  h += '<div class="row"><button class="btn ghost sm" onclick="slotAdd()">+ Pasto</button><span class="small mut">«Personalizza» per scrivere i grammi di un pasto a mano invece che in percentuale.</span></div></div>';
+  // esempi
+  h += '<div class="card stack" style="gap:10px"><h3>Pasti d\'esempio</h3><div class="small mut">' + (d.mode === 'macro' ? 'Facoltativi: il cliente li segna con un tocco. L\'app controlla che rispettino la quota.' : 'Obbligatori: il primo esempio di ogni pasto è il piano che il cliente deve seguire.') + '</div>';
+  dt.slots.forEach((s, i) => {
+    const q = slotQuota(dt, s, d.mode);
+    h += '<div style="border-top:1px solid var(--line2);padding-top:10px"><div class="row" style="flex-wrap:wrap"><b>' + esc(s.name) + '</b><span class="mut small">quota ' + itK(q.kcal) + ' kcal · P ' + r0(q.p) + ' · C ' + r0(q.c) + ' · G ' + r0(q.g) + '</span><button class="btn xs right" onclick="exAdd(' + i + ')">+ Esempio</button></div>';
+    (s.examples || []).forEach((ex, j) => {
+      const m = sumItems(ex.items);
+      const open = S.exEdit && S.exEdit.slot === i && S.exEdit.ex === j;
+      const okAll = d.mode === 'meals' ? true : ['p', 'c', 'g'].every(k => withinMeal(m[k], q[k]));
+      h += '<div class="ex" style="margin-top:8px"><div class="row" style="flex-wrap:wrap"><input class="inp" style="width:170px;min-height:36px;padding:6px 8px" value="' + esc(ex.name || '') + '" placeholder="Nome esempio" onchange="exName(' + i + ',' + j + ',this.value)" aria-label="Nome esempio"><span class="small mut">' + r0(m.kcal) + ' kcal · P ' + r0(m.p) + ' · C ' + r0(m.c) + ' · G ' + r0(m.g) + '</span>' + (d.mode === 'macro' && ex.items.length ? '<span class="chip ' + (okAll ? 'ok' : 'warn') + '">' + (okAll ? 'in quota' : 'fuori quota') + '</span>' : '') + '<button class="btn xs right" onclick="exToggle(' + i + ',' + j + ')">' + (open ? 'Chiudi' : 'Modifica') + '</button><button class="btn xs danger" onclick="exDel(' + i + ',' + j + ')" aria-label="Elimina esempio">✕</button></div>';
+      if (!open) h += '<div class="small" style="margin-top:6px;color:var(--ink2)">' + (ex.items.length ? esc(itemsText(ex.items)) : '<span class="mut">vuoto</span>') + '</div>';
+      else {
+        h += '<div class="list" style="margin-top:6px">';
+        ex.items.forEach((it, k) => { const f = foodById(it.foodId); if (!f) return; const mm = macrosOf(f, it.qty); h += '<div class="row"><div class="grow"><div class="b">' + esc(f.name) + '</div><div class="small mut">' + r0(mm.kcal) + ' kcal · P ' + r0(mm.p) + ' · C ' + r0(mm.c) + ' · G ' + r0(mm.g) + '</div></div><div class="qty"><button onclick="exQty(' + i + ',' + j + ',' + k + ',-1)" aria-label="Meno">−</button><span onclick="exQtyAsk(' + i + ',' + j + ',' + k + ')" role="button" style="cursor:pointer">' + it1(it.qty) + ' g</span><button onclick="exQty(' + i + ',' + j + ',' + k + ',1)" aria-label="Più">+</button></div><button class="btn xs" style="min-width:30px;padding:4px 7px" onclick="exRemove(' + i + ',' + j + ',' + k + ')" aria-label="Rimuovi">✕</button></div>'; });
+        h += '</div><div class="row" style="margin-top:8px"><div class="srch grow"><input class="inp" id="exSearch" type="search" placeholder="+ Aggiungi un alimento" autocomplete="off" oninput="exSearch(this.value)" aria-label="Cerca alimento"><div class="res" id="exRes" hidden></div></div><button class="btn" style="width:46px;padding:0" aria-label="Codice a barre" onclick="barcodeStart(\'ex\')">' + ICO.barcode + '</button></div>';
+        if (d.mode === 'macro' && ex.items.length) h += '<button class="btn link" style="align-self:flex-start" onclick="exFit(' + i + ',' + j + ')">Adatta le quantità alla quota</button>';
+        h += '<div class="row small" style="margin-top:8px;gap:12px">' + ['p', 'c', 'g'].map(k => '<span>' + macroName(k) + ' <b class="' + (withinMeal(m[k], q[k]) ? 'ok' : 'warn') + '">' + r0(m[k]) + '</b> / ' + r0(q[k]) + ' g</span>').join('') + '</div>';
+      }
+      h += '</div>';
+    });
+    h += '<div style="margin-top:8px"><input class="inp" style="min-height:36px;padding:6px 8px" value="' + esc(s.note || '') + '" placeholder="Nota per il cliente su questo pasto (facoltativa)" onchange="slotE(' + i + ',\'note\',this.value)" aria-label="Nota pasto"></div></div>';
+  });
+  h += '</div>';
+  h += '<div class="card stack"><div><label class="lab" for="dtNote">Nota per i giorni «' + esc(dt.name) + '»</label><textarea class="inp" id="dtNote" rows="2" onchange="dte(\'note\',this.value)">' + esc(dt.note || '') + '</textarea></div><div><label class="lab" for="plNote">Nota generale per ' + esc(c.name.split(' ')[0]) + '</label><textarea class="inp" id="plNote" rows="3" onchange="pe(\'note\',this.value)">' + esc(d.note || '') + '</textarea></div></div>';
+  return h;
+}
+function _d() { return ensureDraft(S.clientId); }
+function _dt() { return _d().dayTypes[S.dt]; }
+function touch() { _d().updatedAt = Date.now(); persist(); render(); }
+function pe(k, v) { _d()[k] = v; touch(); }
+function dte(k, v) { _dt()[k] = v; touch(); }
+function tgt(k, v) { const T = _dt().targets; T[k] = Math.max(0, num(v)); touch(); }
+function dtDay(i) { const d = _d(); d.dayTypes.forEach((x, j) => { if (j !== S.dt) x.days = x.days.filter(w => w !== i); }); const dt = _dt(); if (dt.days.includes(i)) dt.days = dt.days.filter(w => w !== i); else dt.days.push(i); dt.days.sort(); touch(); }
+function dtAdd() { const d = _d(); const free = WD.map((_, i) => i).filter(i => !d.dayTypes.some(x => x.days.includes(i))); const n = clone(d.dayTypes[S.dt] || newDayType('Nuovo', [])); n.id = uid(); n.name = 'Nuovo tipo'; n.days = free; n.slots.forEach(s => { s.id = uid(); s.examples.forEach(e => e.id = uid()); }); d.dayTypes.push(n); S.dt = d.dayTypes.length - 1; touch(); }
+function dtDel() { askConfirm('Eliminare questo tipo di giornata?', 'Elimina', () => { const d = _d(); d.dayTypes.splice(S.dt, 1); S.dt = 0; touch(); }); }
+function slotE(i, k, v) { _dt().slots[i][k] = v; touch(); }
+function slotM(i, k, v) { _dt().slots[i].m[k] = Math.max(0, num(v)); touch(); }
+function slotToggleM(i) { const dt = _dt(); const s = dt.slots[i]; if (s.m) { s.m = null; } else { const q = slotQuota(dt, s, 'macro'); s.m = { p: r0(q.p), c: r0(q.c), g: r0(q.g) }; } touch(); }
+function slotMove(i, dir) { const sl = _dt().slots; const j = i + dir; if (j < 0 || j >= sl.length) return; [sl[i], sl[j]] = [sl[j], sl[i]]; touch(); }
+function slotDel(i) { const dt = _dt(); if (dt.slots.length <= 1) { toast('Serve almeno un pasto'); return; } askConfirm('Eliminare il pasto «' + dt.slots[i].name + '»?', 'Elimina', () => { _dt().slots.splice(i, 1); touch(); }); }
+function slotAdd() { const dt = _dt(); dt.slots.push({ id: uid(), name: 'Nuovo pasto', time: '16:00', pct: 0, m: null, examples: [] }); touch(); }
+function exAdd(i) { const s = _dt().slots[i]; s.examples = s.examples || []; s.examples.push({ id: uid(), name: 'Esempio ' + (s.examples.length + 1), items: [] }); S.exEdit = { slot: i, ex: s.examples.length - 1 }; touch(); }
+function exFit(i, j) { const dt = _dt(); const s = dt.slots[i]; fitExampleToQuota(s.examples[j].items, slotQuota(dt, s, 'macro')); touch(); }
+function exName(i, j, v) { _dt().slots[i].examples[j].name = v; touch(); }
+function exToggle(i, j) { S.exEdit = (S.exEdit && S.exEdit.slot === i && S.exEdit.ex === j) ? null : { slot: i, ex: j }; render(); }
+function exDel(i, j) { _dt().slots[i].examples.splice(j, 1); S.exEdit = null; touch(); }
+function exQty(i, j, k, dir) { const it = _dt().slots[i].examples[j].items[k]; const f = foodById(it.foodId); it.qty = Math.max(0, it.qty + dir * segStep(f)); if (!it.qty) _dt().slots[i].examples[j].items.splice(k, 1); touch(); }
+function exQtyAsk(i, j, k) { const it = _dt().slots[i].examples[j].items[k]; qtySheet(foodById(it.foodId), it.qty, v => { it.qty = v; touch(); }); }
+function exRemove(i, j, k) { _dt().slots[i].examples[j].items.splice(k, 1); touch(); }
+function exSearch(q) {
+  const box = document.getElementById('exRes'); const res = searchFoods(q, 10);
+  if (!q.trim()) { box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = res.map(f => '<button onclick="exPick(\'' + f.id + '\')"><span>' + esc(f.name) + '</span><span class="mut small">' + r0(f.kcal) + ' kcal/100 g</span></button>').join('') || '<button onclick="foodNewFrom(\'ex\')">Non c\'è: <b>crea «' + esc(q.trim()) + '»</b></button>';
+}
+function exPick(id) { const f = foodById(id); qtySheet(f, null, v => { _dt().slots[S.exEdit.slot].examples[S.exEdit.ex].items.push({ foodId: id, qty: v }); touch(); }); }
+function previewPlan() { const d = _d(); sheetOpen('<div class="stack"><h2>' + esc(d.name) + '</h2><div class="small mut">Così lo vede il cliente nella scheda Piano.</div>' + planView(d) + '<button class="btn wide" onclick="sheetClose()">Chiudi</button></div>'); }
+function doSend() { sendPlan(S.clientId); toast('Piano inviato'); render(); }
+
+// ===== ALIMENTI =====
+function pageAlimenti() {
+  const q = S.q || '';
+  let list = q.trim() ? searchFoods(q, 60) : DB.foods.filter(f => f.src !== 'base').slice().reverse();
+  let h = '<div class="stack"><div class="row"><h1>Alimenti</h1><button class="btn sm right" onclick="foodEditSheet(null)">+ Nuovo</button><button class="btn sm" style="width:46px;padding:0" aria-label="Codice a barre" onclick="barcodeStart(\'list\')">' + ICO.barcode + '</button></div>';
+  h += '<input class="inp" type="search" placeholder="Cerca tra ' + DB.foods.length + ' alimenti" value="' + esc(q) + '" oninput="S.q=this.value;renderFoodList()" aria-label="Cerca alimento">';
+  h += '<div class="card" id="foodList">' + foodListHtml(list, q) + '</div>';
+  h += '<div class="small mut">Valori per 100 g. Gli alimenti di base hanno valori medi indicativi: controlla l\'etichetta per i prodotti confezionati, o usa il codice a barre.</div></div>';
+  return h;
+}
+function renderFoodList() { const q = S.q || ''; const list = q.trim() ? searchFoods(q, 60) : DB.foods.filter(f => f.src !== 'base').slice().reverse(); document.getElementById('foodList').innerHTML = foodListHtml(list, q); }
+function foodListHtml(list, q) {
+  if (!list.length) return '<div class="mut">' + (q.trim() ? 'Nessun alimento trovato. <button class="btn link" onclick="foodEditSheet(null,S.q)">Crea «' + esc(q.trim()) + '»</button>' : 'Qui compaiono gli alimenti che aggiungi tu o dal codice a barre. Cerca sopra per vedere quelli di base.') + '</div>';
+  return list.map(f => '<button class="food" style="width:100%;text-align:left;background:transparent;border-left:0;border-right:0;border-bottom:0" onclick="foodEditSheet(\'' + f.id + '\')"><div class="grow"><div class="b">' + esc(f.name) + (f.src === 'off' ? ' <span class="chip" style="font-size:10px;padding:2px 7px">etichetta</span>' : f.src === 'custom' ? ' <span class="chip" style="font-size:10px;padding:2px 7px">tuo</span>' : '') + '</div><div class="small mut">' + r0(f.kcal) + ' kcal · P ' + r1(f.p) + ' · C ' + r1(f.c) + ' · G ' + r1(f.g) + (f.salt ? ' · sale ' + r1(f.salt) : '') + '</div></div><span class="mut">›</span></button>').join('');
+}
+function foodEditSheet(id, presetName, ctx, preset) {
+  const f = id ? foodById(id) : Object.assign({ name: presetName || '', cat: 'altro', kcal: '', p: '', c: '', g: '', fib: '', salt: '', portions: [] }, preset || {});
+  window._foodCtx = ctx || null; window._foodId = id || null; window._foodPreset = preset || null;
+  const inp = (k, label, step) => '<div><label class="lab small" for="fe_' + k + '">' + label + '</label><input class="inp n" id="fe_' + k + '" type="number" inputmode="decimal" step="' + (step || 0.1) + '" value="' + (f[k] === '' || f[k] == null ? '' : f[k]) + '"></div>';
+  const p0 = (f.portions || [])[0] || { name: '', g: '' };
+  sheetOpen('<div class="stack"><h2>' + (id ? 'Alimento' : 'Nuovo alimento') + '</h2>' + (preset && preset.brand ? '<div class="small mut">' + esc(preset.brand) + ' · da Open Food Facts, codice ' + esc(preset.barcode || '') + '</div>' : '') +
+    '<div><label class="lab small" for="fe_name">Nome</label><input class="inp" id="fe_name" value="' + esc(f.name) + '"></div>' +
+    '<div><label class="lab small" for="fe_cat">Categoria</label><select class="inp" id="fe_cat">' + CATS.map(c => '<option' + (c === f.cat ? ' selected' : '') + '>' + c + '</option>').join('') + '</select></div>' +
+    '<div class="small mut b">Valori per 100 g</div><div class="g3">' + inp('p', 'Proteine g') + inp('c', 'Carboidrati g') + inp('g', 'Grassi g') + '</div>' +
+    '<div class="g3">' + inp('kcal', 'kcal', 1) + inp('fib', 'Fibre g') + inp('salt', 'Sale g', 0.01) + '</div>' +
+    '<button class="btn link" style="align-self:flex-start" onclick="feKcal()">Calcola le kcal dai macro</button>' +
+    '<div class="small mut b">Porzione rapida (facoltativa)</div><div class="g2"><input class="inp" id="fe_pn" placeholder="es. fetta" value="' + esc(p0.name) + '"><input class="inp n" id="fe_pg" type="number" inputmode="decimal" placeholder="grammi" value="' + (p0.g || '') + '"></div>' +
+    '<div class="g2"><button class="btn" onclick="sheetClose()">Annulla</button><button class="btn p" onclick="foodSave()">Salva</button></div>' +
+    (id && f.src !== 'base' ? '<button class="btn danger" onclick="foodDel()">Elimina alimento</button>' : '') + '</div>');
+  setTimeout(() => { const i = document.getElementById(f.name ? 'fe_p' : 'fe_name'); if (i) i.focus(); }, 50);
+}
+function feKcal() { const g = k => num(document.getElementById('fe_' + k).value); document.getElementById('fe_kcal').value = r0(kcalOfMacros({ p: g('p'), c: g('c'), g: g('g') })); }
+function foodSave() {
+  const g = k => num(document.getElementById('fe_' + k).value);
+  const name = document.getElementById('fe_name').value.trim(); if (!name) { toast('Serve il nome'); return; }
+  let f = window._foodId ? foodById(window._foodId) : null;
+  if (!f) { f = { id: uid(), src: 'custom', portions: [] }; DB.foods.push(f); if (window._foodPreset) { f.src = 'off'; f.barcode = window._foodPreset.barcode; f.brand = window._foodPreset.brand; } }
+  Object.assign(f, { name, cat: document.getElementById('fe_cat').value, kcal: g('kcal') || r0(kcalOfMacros({ p: g('p'), c: g('c'), g: g('g') })), p: g('p'), c: g('c'), g: g('g'), fib: g('fib'), salt: g('salt') });
+  const pn = document.getElementById('fe_pn').value.trim(), pg = num(document.getElementById('fe_pg').value);
+  f.portions = pn && pg > 0 ? [{ name: pn, g: pg }] : (f.portions || []).slice(1).length ? f.portions.slice(1) : [];
+  persist(); sheetClose(); toast('Alimento salvato');
+  const ctx = window._foodCtx; window._foodCtx = null;
+  if (ctx === 'segna') qtySheet(f, null, v => { S.edit.items.push({ foodId: f.id, qty: v }); render(); });
+  else if (ctx === 'ex') qtySheet(f, null, v => { _dt().slots[S.exEdit.slot].examples[S.exEdit.ex].items.push({ foodId: f.id, qty: v }); touch(); });
+  else render();
+}
+function foodDel() { const id = window._foodId; sheetClose(); askConfirm('Eliminare questo alimento? Nei pasti già segnati resterà come «?».', 'Elimina', () => { DB.foods = DB.foods.filter(f => f.id !== id); persist(); render(); }); }
+function foodNewFrom(ctx) { const q = document.getElementById(ctx === 'segna' ? 'segSearch' : 'exSearch'); foodEditSheet(null, q ? q.value.trim() : '', ctx); }
+
+// --- codice a barre (Open Food Facts) ---
+let _bcStream = null;
+function barcodeStart(ctx) {
+  window._bcCtx = ctx;
+  const canScan = 'BarcodeDetector' in window && navigator.mediaDevices && navigator.mediaDevices.getUserMedia;
+  sheetOpen('<div class="stack"><h2>Codice a barre</h2>' + (canScan ? '<video id="bcVideo" playsinline muted style="width:100%;border-radius:12px;background:#000;max-height:260px"></video><div class="small mut" id="bcMsg">Inquadra il codice a barre…</div>' : '<div class="small mut">Questo browser non legge i codici con la fotocamera: scrivi le cifre sotto l\'etichetta.</div>') + '<div class="row"><input class="inp grow" id="bcInp" inputmode="numeric" placeholder="Cifre del codice (EAN)" onkeydown="if(event.key===\'Enter\')barcodeLookup()"><button class="btn p" onclick="barcodeLookup()">Cerca</button></div><button class="btn" onclick="barcodeStop();sheetClose()">Chiudi</button></div>');
+  if (canScan) barcodeCamera();
+}
+async function barcodeCamera() {
+  try {
+    const det = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] });
+    _bcStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    const v = document.getElementById('bcVideo'); if (!v) { barcodeStop(); return; } v.srcObject = _bcStream; await v.play();
+    const tick = async () => { if (!_bcStream || !document.getElementById('bcVideo')) return; try { const codes = await det.detect(v); if (codes.length) { document.getElementById('bcInp').value = codes[0].rawValue; barcodeStop(); barcodeLookup(); return; } } catch (e) { } setTimeout(tick, 250); };
+    tick();
+  } catch (e) { const m = document.getElementById('bcMsg'); if (m) m.textContent = 'Fotocamera non disponibile: scrivi le cifre.'; }
+}
+function barcodeStop() { if (_bcStream) { _bcStream.getTracks().forEach(t => t.stop()); _bcStream = null; } }
+async function barcodeLookup() {
+  const code = (document.getElementById('bcInp').value || '').replace(/\D/g, ''); if (code.length < 8) { toast('Codice troppo corto'); return; }
+  barcodeStop();
+  const ctx = window._bcCtx;
+  const have = DB.foods.find(f => f.barcode === code);
+  if (have) { sheetClose(); afterBarcode(have, ctx); return; }
+  document.getElementById('bcInp').disabled = true; toast('Cerco su Open Food Facts…');
+  try {
+    const r = await fetch('https://world.openfoodfacts.org/api/v2/product/' + code + '.json?fields=product_name,product_name_it,brands,nutriments,serving_quantity');
+    const j = await r.json();
+    if (!j.product) throw new Error('nf');
+    const n = j.product.nutriments || {};
+    const kcal = n['energy-kcal_100g'] != null ? n['energy-kcal_100g'] : (n['energy_100g'] ? n['energy_100g'] / 4.184 : 0);
+    const preset = { name: j.product.product_name_it || j.product.product_name || '', brand: j.product.brands || '', barcode: code, kcal: r0(kcal), p: r1(n.proteins_100g || 0), c: r1(n.carbohydrates_100g || 0), g: r1(n.fat_100g || 0), fib: r1(n.fiber_100g || 0), salt: r1(n.salt_100g || 0), cat: 'altro', portions: j.product.serving_quantity ? [{ name: 'porzione', g: num(j.product.serving_quantity) }] : [] };
+    sheetClose(); foodEditSheet(null, preset.name, ctx === 'list' ? null : ctx, preset);
+  } catch (e) { sheetClose(); toast(navigator.onLine ? 'Prodotto non trovato: crealo a mano' : 'Serve la connessione'); foodEditSheet(null, '', ctx === 'list' ? null : ctx, { barcode: code, name: '' }); }
+}
+function afterBarcode(f, ctx) {
+  if (ctx === 'segna') qtySheet(f, null, v => { S.edit.items.push({ foodId: f.id, qty: v }); render(); });
+  else if (ctx === 'ex') qtySheet(f, null, v => { _dt().slots[S.exEdit.slot].examples[S.exEdit.ex].items.push({ foodId: f.id, qty: v }); touch(); });
+  else foodEditSheet(f.id);
+}
+
+// ===== AVVIO =====
+document.addEventListener('click', e => { if (!e.target.closest('.srch')) document.querySelectorAll('.srch .res').forEach(r => r.hidden = true); });
+load(); render();
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) { navigator.serviceWorker.register('sw.js').catch(() => { }); }
+</script>
+</body>
+</html>
