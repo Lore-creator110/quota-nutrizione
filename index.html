@@ -81,6 +81,7 @@ label.lab{display:block;font-weight:600;margin-bottom:6px}
 .days7 button.on.dot::after{background:#9BD1B4}
 .g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.g2.end{align-items:end}
 .gauto{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
 .num{font-family:var(--disp);font-weight:600;font-size:22px}
 .num.lg{font-size:30px}
@@ -121,6 +122,12 @@ label.lab{display:block;font-weight:600;margin-bottom:6px}
 #toast.on{opacity:1}
 .notice{background:var(--warnsoft);color:var(--warn);border-radius:10px;padding:10px 12px;font-size:13px}
 .kv{display:flex;justify-content:space-between;gap:10px;padding:6px 0}
+.shoprow{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line2)}
+.cathead+.shoprow{border-top:0}
+.shoprow.done .nm{text-decoration:line-through;color:var(--mut)}
+.cathead{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);font-weight:600;margin:14px 0 2px}
+.tickbtn{border:0;background:transparent;padding:9px;margin:-9px;border-radius:50%}
+select.inp{appearance:auto}
 .srch{position:relative}
 .srch .res{position:absolute;left:0;right:0;top:100%;z-index:5;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(22,32,27,.12);max-height:280px;overflow:auto;margin-top:4px}
 .srch .res button{display:flex;justify-content:space-between;gap:10px;width:100%;text-align:left;padding:10px 12px;border:0;background:transparent;border-top:1px solid var(--line2)}
@@ -321,8 +328,40 @@ const FOODS_BASE = [
   ["Aceto balsamico", "condimenti", 90, 0.5, 17, 0, 0, 0, [["cucchiaio", 15]]],
   ["Pesto alla genovese", "condimenti", 450, 5, 6, 45, 1, 1.5, [["cucchiaio", 20]]]
 ];
+// ===== PREZZI INDICATIVI =====
+// [€/kg, grammi della confezione tipica (0 = sfuso o al banco)].
+// Stime di prezzi medi da supermercato italiano: servono per dare un ordine di grandezza alla spesa.
+// Ogni prezzo si corregge dall'app (Spesa → tocca l'alimento, oppure Alimenti).
+const PRICES = {
+  "Riso basmati (crudo)": [3.5, 1000], "Riso bianco (crudo)": [2.4, 1000], "Riso integrale (crudo)": [3, 1000], "Pasta di semola (cruda)": [1.8, 500], "Pasta integrale (cruda)": [2.6, 500],
+  "Fiocchi d'avena": [3.5, 500], "Pane integrale": [4.5, 400], "Pane bianco": [3.8, 0], "Pane di segale": [5.5, 500], "Fette biscottate integrali": [6, 315], "Gallette di riso": [9, 130], "Gallette di mais": [9, 130],
+  "Patate": [1.5, 0], "Patate dolci": [3, 0], "Quinoa (cruda)": [9, 400], "Cous cous (crudo)": [3.5, 500], "Farro (crudo)": [4.5, 500], "Orzo perlato (crudo)": [3, 500], "Mais dolce (sgocciolato)": [5, 140],
+  "Piadina": [6, 360], "Tortilla di grano": [6.5, 320], "Pane arabo (pita)": [5, 300], "Cracker": [5, 250], "Muesli": [7, 375], "Corn flakes": [5, 375], "Gnocchi di patate": [4, 500],
+  "Petto di pollo": [11, 0], "Coscia di pollo (senza pelle)": [7, 0], "Fesa di tacchino": [12, 0], "Manzo magro (bistecca)": [20, 0], "Carne macinata di manzo 5%": [14, 0], "Carne macinata di manzo 20%": [10, 0],
+  "Lonza di maiale": [9, 0], "Vitello (fettine)": [22, 0], "Coniglio": [12, 0], "Hamburger di manzo": [13, 240], "Bresaola": [38, 80], "Prosciutto crudo": [30, 100], "Prosciutto crudo sgrassato": [32, 100],
+  "Prosciutto cotto": [22, 100], "Tacchino affettato": [22, 100], "Speck": [26, 100], "Salmone affumicato": [45, 100],
+  "Merluzzo": [14, 0], "Salmone fresco": [22, 0], "Tonno fresco": [30, 0], "Tonno al naturale (sgocciolato)": [20, 80], "Tonno all'olio (sgocciolato)": [18, 80], "Orata": [13, 0], "Branzino": [14, 0],
+  "Gamberi": [18, 0], "Sgombro": [10, 0], "Sogliola": [22, 0], "Calamari": [14, 0], "Polpo": [18, 0], "Platessa": [13, 0],
+  "Uovo intero": [7.3, 330], "Albume": [4, 500], "Latte intero": [1.4, 1000], "Latte parzialmente scremato": [1.3, 1000], "Latte scremato": [1.3, 1000],
+  "Yogurt greco 0%": [5.5, 170], "Yogurt greco intero": [5.5, 170], "Skyr": [6, 150], "Yogurt bianco magro": [2.8, 250], "Yogurt bianco intero": [2.8, 250], "Fiocchi di latte": [7, 175], "Ricotta vaccina": [5, 250],
+  "Mozzarella": [9, 125], "Mozzarella light": [10, 125], "Parmigiano Reggiano": [24, 0], "Grana Padano": [18, 0], "Formaggio spalmabile light": [9, 175], "Formaggio spalmabile": [8, 175], "Feta": [13, 200],
+  "Stracchino": [11, 170], "Burrata": [16, 125],
+  "Ceci secchi": [3.5, 500], "Ceci in scatola (sgocciolati)": [3.5, 240], "Lenticchie secche": [4, 500], "Lenticchie in scatola (sgocciolate)": [3.5, 240], "Fagioli cannellini in scatola": [3.5, 240],
+  "Fagioli borlotti in scatola": [3.5, 240], "Piselli (surgelati)": [3.5, 450], "Edamame": [8, 400], "Tofu": [9, 250], "Hummus": [10, 200],
+  "Zucchine": [2.5, 0], "Spinaci": [3.5, 0], "Broccoli": [3, 0], "Pomodori": [2.8, 0], "Pomodorini": [4, 0], "Insalata (lattuga)": [3, 0], "Rucola": [9, 100], "Carote": [1.5, 0], "Peperoni": [3, 0],
+  "Cetrioli": [2.5, 0], "Melanzane": [2.5, 0], "Funghi champignon": [5, 0], "Cavolfiore": [2.5, 0], "Fagiolini": [4, 0], "Asparagi": [7, 0], "Cipolla": [1.6, 0], "Finocchio": [2.5, 0],
+  "Verdure miste surgelate": [3.5, 450], "Passata di pomodoro": [1.8, 700], "Avocado": [7, 0],
+  "Banana": [1.8, 0], "Mela": [2.2, 0], "Pera": [2.6, 0], "Arancia": [2, 0], "Kiwi": [3.5, 0], "Fragole": [6, 0], "Mirtilli": [14, 125], "Frutti di bosco surgelati": [9, 300], "Uva": [3.5, 0],
+  "Ananas": [2, 0], "Pesca": [2.8, 0], "Anguria": [1.2, 0], "Melone": [2, 0], "Mandarino": [2.5, 0], "Datteri": [10, 250], "Uvetta": [7, 250], "Albicocche secche": [12, 200],
+  "Olio extravergine d'oliva": [11, 1000], "Burro": [11, 250], "Burro di arachidi": [9, 350], "Mandorle": [16, 200], "Noci": [14, 200], "Nocciole": [18, 200], "Anacardi": [16, 200], "Arachidi": [7, 250],
+  "Pistacchi (sgusciati)": [35, 100], "Semi di chia": [12, 250], "Cocco rapè": [9, 200], "Cioccolato fondente 85%": [16, 100],
+  "Proteine whey (polvere)": [30, 1000], "Proteine isolate (polvere)": [40, 1000], "Maltodestrine": [10, 1000], "Barretta proteica (media)": [35, 60], "Miele": [10, 500], "Marmellata": [6, 340],
+  "Zucchero": [1.5, 1000], "Sciroppo d'acero": [28, 250], "Cacao amaro": [12, 250], "Pizza margherita": [20, 350],
+  "Bevanda di avena": [2.2, 1000], "Bevanda di mandorla": [2.4, 1000], "Bevanda di soia": [1.8, 1000], "Birra": [2.5, 330], "Vino rosso": [8, 750],
+  "Salsa di soia": [10, 150], "Ketchup": [4, 500], "Senape": [6, 200], "Aceto balsamico": [8, 500], "Pesto alla genovese": [13, 190]
+};
 // ===== NUCLEO =====
-const APP_VERSION = 1;
+const APP_VERSION = 2;
 const APP_NAME = 'Quota';           // nome provvisorio: cambialo qui
 const KEY = 'quota_db_v1';
 const KCAL = { p: 4, c: 4, g: 9 };
@@ -351,7 +390,7 @@ function r0(n) { return Math.round(n || 0); }
 function r1(n) { return Math.round((n || 0) * 10) / 10; }
 function it1(n) { return String(r1(n)).replace('.', ','); }
 function it2(n) { return (Math.round((n || 0) * 100) / 100).toFixed(2).replace(/0$/, '').replace('.', ','); }
-function itK(n) { return r0(n).toLocaleString('it-IT'); }
+function itK(n) { return String(r0(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 function clone(o) { return JSON.parse(JSON.stringify(o)); }
 function sum(arr, f) { return arr.reduce((a, x) => a + (f ? f(x) : x), 0); }
@@ -365,16 +404,17 @@ function toMin(hhmm) { const p = (hhmm || '12:00').split(':').map(Number); retur
 function persist() { try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) { toast('Spazio pieno: esporta i dati'); } }
 function load() {
   try { const raw = localStorage.getItem(KEY); if (raw) DB = JSON.parse(raw); } catch (e) { DB = null; }
-  if (!DB) { DB = freshDB(); seedDemo(); persist(); }
+  if (!DB) { DB = freshDB(); seedDemo(); }
+  migrate(); persist();
   if (!DB.settings) DB.settings = {};
   S.role = DB.settings.role || 'client';
   S.date = todayISO();
 }
 function freshDB() {
-  return { v: APP_VERSION, settings: { role: 'client' }, foods: baseFoods(), clients: [], plans: {}, logs: {} };
+  return { v: APP_VERSION, settings: { role: 'client' }, foods: baseFoods(), clients: [], plans: {}, logs: {}, shop: {} };
 }
 function baseFoods() {
-  return FOODS_BASE.map((f, i) => ({ id: 'b' + i, name: f[0], cat: f[1], kcal: f[2], p: f[3], c: f[4], g: f[5], fib: f[6], salt: f[7], portions: (f[8] || []).map(p => ({ name: p[0], g: p[1] })), src: 'base' }));
+  return FOODS_BASE.map((f, i) => ({ id: 'b' + i, name: f[0], cat: f[1], kcal: f[2], p: f[3], c: f[4], g: f[5], fib: f[6], salt: f[7], portions: (f[8] || []).map(p => ({ name: p[0], g: p[1] })), src: 'base', price: PRICES[f[0]] ? PRICES[f[0]][0] : null, pack: PRICES[f[0]] ? PRICES[f[0]][1] : 0 }));
 }
 
 // --- alimenti ---
@@ -414,13 +454,13 @@ function itemsText(items) {
 // slot = { id, name, time, pct, m:null|{p,c,g}, examples:[{id,name,items:[{foodId,qty}]}] }
 function newPlan(name) {
   return {
-    id: uid(), name: name || 'Piano', mode: 'macro', note: '', status: 'draft', sentAt: null, updatedAt: Date.now(),
+    id: uid(), name: name || 'Piano', mode: 'macro', note: '', status: 'draft', sentAt: null, updatedAt: Date.now(), supps: [],
     dayTypes: [newDayType('Giorno tipo', [0, 1, 2, 3, 4, 5, 6])]
   };
 }
 function newDayType(name, days) {
   return {
-    id: uid(), name: name, days: days || [], targets: { p: 150, c: 250, g: 65, salt: 5, water: 2.5 }, note: '',
+    id: uid(), name: name, days: days || [], targets: { p: 150, c: 250, g: 65, salt: 5, water: 2.5 }, note: '', load: 'moderato', eee: null,
     slots: [
       { id: uid(), name: 'Colazione', time: '07:30', pct: 20, m: null, examples: [] },
       { id: uid(), name: 'Spuntino', time: '10:30', pct: 10, m: null, examples: [] },
@@ -579,17 +619,18 @@ function askConfirm(text, okLabel, fn) {
 function seedDemo() {
   const me = addClient('Tu (questo telefono)', 78, true);
   const demo = addClient('Marco B. (demo)', 78, false);
+  Object.assign(demo, { sex: 'm', age: 28, height: 180, bf: 14, laf: 1.75, athlete: false, goal: 'dim', rate: 0.75, pk: 2.2, gk: 0.9 });
   const f = n => { const x = DB.foods.find(z => z.name === n); if (!x) throw new Error('food ' + n); return x.id; };
   const plan = newPlan('Ricomposizione, fase 2');
   const all = plan.dayTypes[0]; all.name = 'Allenamento'; all.days = [0, 2, 4];
-  all.targets = { p: 170, c: 280, g: 70, salt: 5, water: 3 };
+  all.targets = { p: 170, c: 280, g: 70, salt: 5, water: 3 }; all.load = 'moderato'; all.eee = 350;
   all.slots[0] = Object.assign(all.slots[0], { name: 'Colazione', time: '07:30', pct: 20, examples: [{ id: uid(), name: 'Avena e yogurt', items: [{ foodId: f("Fiocchi d'avena"), qty: 60 }, { foodId: f('Yogurt greco 0%'), qty: 170 }, { foodId: f('Mirtilli'), qty: 100 }, { foodId: f('Mandorle'), qty: 15 }] }] });
   all.slots[1] = Object.assign(all.slots[1], { name: 'Spuntino', time: '10:30', pct: 10, examples: [{ id: uid(), name: 'Pane, bresaola e avocado', items: [{ foodId: f('Pane integrale'), qty: 60 }, { foodId: f('Bresaola'), qty: 50 }, { foodId: f('Avocado'), qty: 30 }] }] });
   all.slots[2] = Object.assign(all.slots[2], { name: 'Pranzo', time: '13:00', pct: 29, examples: [{ id: uid(), name: 'Riso e pollo', items: [{ foodId: f('Riso basmati (crudo)'), qty: 110 }, { foodId: f('Petto di pollo'), qty: 180 }, { foodId: f('Zucchine'), qty: 200 }, { foodId: f("Olio extravergine d'oliva"), qty: 10 }] }] });
   all.slots[3] = Object.assign(all.slots[3], { name: 'Pre-allenamento', time: '17:00', pct: 15, examples: [{ id: uid(), name: 'Banana e whey', items: [{ foodId: f('Banana'), qty: 120 }, { foodId: f('Proteine whey (polvere)'), qty: 30 }, { foodId: f('Gallette di riso'), qty: 16 }, { foodId: f('Burro di arachidi'), qty: 15 }] }] });
   all.slots[4] = Object.assign(all.slots[4], { name: 'Cena', time: '20:30', pct: 26, examples: [{ id: uid(), name: 'Merluzzo e patate', items: [{ foodId: f('Merluzzo'), qty: 200 }, { foodId: f('Patate'), qty: 350 }, { foodId: f('Insalata (lattuga)'), qty: 80 }, { foodId: f("Olio extravergine d'oliva"), qty: 15 }] }] });
   const rip = clone(all); rip.id = uid(); rip.name = 'Riposo'; rip.days = [1, 3, 5, 6];
-  rip.targets = { p: 170, c: 200, g: 70, salt: 5, water: 3 };
+  rip.targets = { p: 170, c: 200, g: 70, salt: 5, water: 3 }; rip.load = 'riposo'; rip.eee = null;
   rip.slots.forEach(s => { s.id = uid(); s.examples.forEach(e => e.id = uid()); });
   const scale = { "Fiocchi d'avena": 45, 'Pane integrale': 45, 'Riso basmati (crudo)': 80, 'Gallette di riso': 8, 'Patate': 200, 'Banana': 100 };
   rip.slots.forEach(s => s.examples.forEach(e => e.items.forEach(it => { const n = foodById(it.foodId).name; if (scale[n] != null) it.qty = scale[n]; })));
@@ -597,8 +638,14 @@ function seedDemo() {
   plan.dayTypes = [all, rip];
   plan.dayTypes.forEach(dt => dt.slots.forEach(s => s.examples.forEach(e => fitExampleToQuota(e.items, slotQuota(dt, s, 'macro')))));
   plan.note = "I carboidrati restano concentrati intorno all'allenamento. Se salti un pasto, recupera i macro nel successivo.";
+  const sCrea = { id: uid(), sid: 'creatina', name: 'Creatina monoidrato', dose: 3, unit: 'g', when: 'Quando preferisci', dayTypes: 'all', note: 'Sciolta in acqua, tutti i giorni alla stessa ora.' };
+  const sCaf = { id: uid(), sid: 'caffeina', name: 'Caffeina', dose: 200, unit: 'mg', when: 'Pre-allenamento', dayTypes: [all.id], note: 'Solo se ti alleni prima delle 17.' };
+  plan.supps = [sCrea, sCaf];
+  demo.adj = {}; demo.adj[rip.id] = -320;
   DB.plans[demo.id] = { draft: clone(plan), active: clone(plan) }; DB.plans[demo.id].active.status = 'sent'; DB.plans[demo.id].active.sentAt = Date.now() - 6e8;
-  const mine = clone(plan); mine.dayTypes.forEach(d => { d.id = uid(); d.slots.forEach(s => { s.id = uid(); s.examples.forEach(e => e.id = uid()); }); });
+  const mine = clone(plan); const idMap = {};
+  mine.dayTypes.forEach(d => { const nid = uid(); idMap[d.id] = nid; d.id = nid; d.slots.forEach(s => { s.id = uid(); s.examples.forEach(e => e.id = uid()); }); });
+  mine.supps.forEach(sp => { sp.id = uid(); if (sp.dayTypes !== 'all') sp.dayTypes = sp.dayTypes.map(x => idMap[x]); });
   DB.plans[me.id] = { draft: clone(mine), active: clone(mine) }; DB.plans[me.id].active.status = 'sent'; DB.plans[me.id].active.sentAt = Date.now() - 6e8;
   // 7 giorni di diario demo per Marco
   const seeds = [[1, 1, 1, 1, 1], [1, 0.9, 1.15, 1, 1.2], [1, 1, 1, 1, 0.95], [1, 1, 1, 1, 1], [1, 1, 0.9, 1, 1.05], [1.1, 1, 1.2, 1.3, 1], [1, 1.05, 0.85, 0, 0]];
@@ -608,6 +655,7 @@ function seedDemo() {
     const dt = dayTypeFor(DB.plans[demo.id].active, iso, null);
     const log = logFor(demo.id, iso, true);
     log.water = waters[6 - i]; log.saltAdded = salts[6 - i];
+    log.supps = {}; if (i !== 5) log.supps[sCrea.id] = '08:10'; if (dt.id === all.id && i !== 0) log.supps[sCaf.id] = '16:20';
     dt.slots.forEach((s, si) => {
       const k = seeds[6 - i][si];
       if (k === 0) return;
@@ -627,10 +675,11 @@ const ICO = {
   check: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5l2.5 2.5L11 4.5"/></svg>',
   x: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4l6 6M10 4l-6 6"/></svg>',
   back: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+  cart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2.5l2.2 10.5h10l2-7.5H7"/><circle cx="9.5" cy="19" r="1.4"/><circle cx="16.5" cy="19" r="1.4"/></svg>',
   barcode: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7V5h3M17 5h3v2M20 17v2h-3M7 19H4v-2M8 8v8M11 8v8M14 8v8M17 8v8"/></svg>'
 };
 const TABS = {
-  client: [['oggi', 'Oggi', 'oggi'], ['piano', 'Piano', 'piano'], ['prog', 'Progressi', 'prog'], ['set', 'Impostazioni', 'set']],
+  client: [['oggi', 'Oggi', 'oggi'], ['piano', 'Piano', 'piano'], ['spesa', 'Spesa', 'cart'], ['prog', 'Progressi', 'prog'], ['set', 'Impostazioni', 'set']],
   nutri: [['clienti', 'Clienti', 'clienti'], ['alimenti', 'Alimenti', 'food'], ['set', 'Impostazioni', 'set']]
 };
 
@@ -650,6 +699,7 @@ function render() {
       if (S.page === 'oggi') html = pageOggi();
       else if (S.page === 'segna') html = pageSegna();
       else if (S.page === 'piano') html = pagePianoCliente();
+      else if (S.page === 'spesa') html = pageSpesa();
       else if (S.page === 'prog') html = pageProgressi();
       else html = pageSettings();
     } else {
@@ -738,6 +788,7 @@ function pageOggi() {
     if (T.salt) h += '<div class="card"><div class="small mut">Sale</div><div class="row" style="gap:4px;align-items:baseline;margin:2px 0 2px"><span class="num">' + it1(a.salt) + '</span><span class="mut small">/ ' + it1(T.salt) + ' g</span></div><div class="small mut" style="margin-bottom:8px">' + it1(a.real.salt) + ' dagli alimenti · ' + it1(a.saltAdded) + ' aggiunto</div><div class="row" style="gap:6px"><button class="btn grow sm" onclick="addSalt(0.5)">+ 0,5 g aggiunto</button><button class="btn sm" style="min-width:44px" onclick="addSalt(-0.5)" aria-label="Togli 0,5 g">−</button></div></div>';
     h += '</div>';
   }
+  h += suppsTodayHtml(me, plan, dt, log);
   // pasti
   a.slots.forEach((r, i) => {
     const s = r.slot;
@@ -861,7 +912,7 @@ function qtySheet(f, cur, fn) {
   const m = macrosOf(f, 100);
   sheetOpen('<div class="stack"><div><h2>' + esc(f.name) + '</h2><div class="small mut">per 100 g: ' + r0(m.kcal) + ' kcal · P ' + r1(m.p) + ' · C ' + r1(m.c) + ' · G ' + r1(m.g) + '</div></div>' + (ports ? '<div class="g2">' + ports + '</div>' : '') + '<div class="row"><input class="inp n grow" id="qtyInp" type="number" inputmode="decimal" step="1" min="0" value="' + (cur != null ? cur : (f.portions && f.portions[0] ? f.portions[0].g : 100)) + '" onkeydown="if(event.key===\'Enter\')qtyDone()"><span class="mut">grammi</span></div><button class="btn p wide" onclick="qtyDone()">Conferma</button></div>');
   window._afterRender = null;
-  setTimeout(() => { const i = document.getElementById('qtyInp'); if (i) { i.focus(); i.select(); } }, 50);
+  { const i = document.getElementById('qtyInp'); if (i) { i.focus(); i.select(); } }
 }
 function qtyDone(v) { if (v == null) v = num(document.getElementById('qtyInp').value, 0); sheetClose(); if (v > 0) window._qfn(r1(v)); }
 function segSave() {
@@ -889,6 +940,7 @@ function planView(plan, opts) {
     if (dt.note) h += '<div class="hint">' + esc(dt.note) + '</div>';
     h += '</div>';
   });
+  h += suppsViewHtml(plan);
   if (plan.note) h += '<div class="card"><div class="small mut b" style="margin-bottom:4px">Nota generale</div>' + esc(plan.note) + '</div>';
   return h;
 }
@@ -910,7 +962,8 @@ function pageSettings() {
   h += '<div class="card stack"><div class="b">Chi usa questo telefono</div><div class="seg"><button class="' + (S.role === 'client' ? 'on' : '') + '" onclick="setRole(\'client\')">Cliente</button><button class="' + (S.role === 'nutri' ? 'on' : '') + '" onclick="setRole(\'nutri\')">Nutrizionista</button></div><div class="small mut">In questa versione di prova i due ruoli convivono sullo stesso telefono. Con gli account (prossima versione) ognuno vedrà solo il suo.</div></div>';
   if (me) h += '<div class="card stack"><div class="b">Il tuo profilo (cliente)</div><div class="g2"><div><label class="lab small" for="meName">Nome</label><input class="inp" id="meName" value="' + esc(me.name) + '" onchange="me_set(\'name\',this.value)"></div><div><label class="lab small" for="meW">Peso (kg)</label><input class="inp n" id="meW" type="number" inputmode="decimal" value="' + (me.weight || '') + '" onchange="me_set(\'weight\',num(this.value))"></div></div></div>';
   h += '<div class="card stack"><div class="b">I tuoi dati</div><div class="small mut">Tutto resta su questo telefono. Esporta un file di sicurezza o per spostare i dati.</div><div class="g2"><button class="btn" onclick="exportJSON()">Esporta</button><button class="btn" onclick="importJSON()">Importa</button></div><button class="btn danger" onclick="askConfirm(\'Cancella tutti i dati e ricarica i dati demo?\',\'Sì, azzera\',resetAll)">Azzera e ricarica la demo</button></div>';
-  h += '<div class="card"><div class="b">Alimenti</div><div class="small mut" style="margin-top:4px">' + DB.foods.filter(f => f.src === 'base').length + ' alimenti di base con valori medi indicativi, ' + DB.foods.filter(f => f.src !== 'base').length + ' aggiunti. I prodotti confezionati arrivano da Open Food Facts tramite codice a barre.</div></div>';
+  h += '<div class="card"><div class="b">Alimenti</div><div class="small mut" style="margin-top:4px">' + DB.foods.filter(f => f.src === 'base').length + ' alimenti di base con valori medi indicativi, ' + DB.foods.filter(f => f.src !== 'base').length + ' aggiunti. I prodotti confezionati arrivano da Open Food Facts tramite codice a barre. I prezzi per la spesa sono medie indicative: si correggono dalla lista o da Alimenti.</div></div>';
+  h += '<div class="card stack"><div class="b">Da dove vengono i numeri</div><div class="small mut">Fabbisogni, intervalli dei macronutrienti e schede degli integratori vengono da linee guida e position stand.</div><button class="btn" onclick="refsSheet()">Vedi le fonti</button></div>';
   h += '<div class="small mut" style="text-align:center">' + APP_NAME + ' · versione di prova ' + APP_VERSION + '</div></div>';
   return h;
 }
@@ -925,6 +978,391 @@ function importJSON() {
   inp.click();
 }
 function resetAll() { localStorage.removeItem(KEY); DB = null; load(); S.page = S.role === 'client' ? 'oggi' : 'clienti'; render(); toast('Dati demo ricaricati'); }
+// ===== BUILD 2: scheda cliente, assistente, controlli, integratori, spesa =====
+// I numeri di questa parte vengono da linee guida e position stand: vedi REFS in fondo e la ricerca allegata.
+const LAFS = [[1.45, 'Molto leggero, quasi fermo'], [1.6, 'Sedentario, attività leggera'], [1.75, 'Moderatamente attivo'], [2.1, 'Molto attivo'], [2.4, 'Allenamenti lunghi quasi ogni giorno']];
+const LOADS = {
+  riposo: { label: 'Riposo', r: null },
+  leggero: { label: 'Leggero: bassa intensità, tecnica', r: [3, 5] },
+  moderato: { label: 'Moderato: circa 1 ora al giorno', r: [5, 7] },
+  alto: { label: 'Alto: 1–3 ore al giorno', r: [6, 10] },
+  moltoalto: { label: 'Molto alto: 4–5 ore al giorno', r: [8, 12] }
+};
+const GOALS = { mant: 'Mantenimento', dim: 'Dimagrimento', massa: 'Aumento di massa' };
+const EQS = { mifflin: 'Mifflin-St Jeor', tenhaaf: 'Ten-Haaf (atleti)', tenhaaf_ffm: 'Ten-Haaf su massa magra (atleti)' };
+const KCAL_PER_KG_FAT = 7700;
+const REFS = [
+  ['Equazioni del metabolismo a riposo, adulti (Frankenfield 2005)', 'https://pure.psu.edu/en/publications/comparison-of-predictive-equations-for-resting-metabolic-rate-in-/'],
+  ['Equazioni del metabolismo a riposo, atleti (O\'Neill 2023)', 'https://link.springer.com/content/pdf/10.1007/s40279-023-01896-z.pdf'],
+  ['LARN, V revisione (SINU 2024)', 'https://sinu.it/larn/'],
+  ['Nutrizione e prestazione: ACSM, Academy of Nutrition and Dietetics, Dietitians of Canada 2016', 'https://pubmed.ncbi.nlm.nih.gov/26917108/'],
+  ['Carboidrati nello sport, tabella per carico (DGE 2019 su dati ACSM)', 'https://www.ernaehrungs-umschau.de/fileadmin/Ernaehrungs-Umschau/pdfs/pdf_2019/11_19/EU11_2019_DGE_engl.pdf'],
+  ['Proteine ed esercizio (ISSN 2017)', 'https://pmc.ncbi.nlm.nih.gov/articles/PMC5477153'],
+  ['Preparazione alla gara nel bodybuilding natural (Helms 2014)', 'https://pmc.ncbi.nlm.nih.gov/articles/PMC4033492/'],
+  ['Valori di riferimento per grassi, carboidrati, fibre e acqua (EFSA 2010)', 'https://www.efsa.europa.eu/en/press/news/nda100326'],
+  ['Sodio e sale (OMS)', 'https://www.who.int/news-room/fact-sheets/detail/salt-reduction'],
+  ['REDs, bassa disponibilità energetica (CIO 2023)', 'https://pubmed.ncbi.nlm.nih.gov/37752011/'],
+  ['Integratori e atleta di alto livello (CIO 2018)', 'https://pubmed.ncbi.nlm.nih.gov/29540367/'],
+  ['Classificazione ABCD degli integratori (AIS)', 'https://www.ais.gov.au/__data/assets/pdf_file/0006/1082517/AIS-Supplement-Framework-ABCD-System_v4.pdf'],
+  ['Creatina (ISSN 2017)', 'https://informahealthcare.com/doi/full/10.1186/s12970-017-0173-z'],
+  ['Caffeina (ISSN 2021)', 'https://pmc.ncbi.nlm.nih.gov/articles/PMC7777221'],
+  ['Omega-3 a catena lunga, sicurezza (EFSA 2012)', 'https://www.efsa.europa.eu/en/press/news/120727'],
+  ['Limiti ministeriali per gli integratori (Ministero della Salute, rev. ottobre 2022)', 'https://www.ausl.bologna.it/seztemi/alimentazione/integratori/link-e-documenti-utili/files/elenco.pdf']
+];
+function refsSheet() {
+  sheetOpen('<div class="stack"><h2>Fonti</h2><div class="small mut">I valori proposti dall\'app sono punti di partenza presi da queste fonti. La decisione sul singolo cliente resta del professionista.</div><div class="list">' + REFS.map(r => '<div><a href="' + r[1] + '" target="_blank" rel="noopener">' + esc(r[0]) + '</a></div>').join('') + '</div><button class="btn wide" onclick="sheetClose()">Chiudi</button></div>');
+}
+function round5(n) { return Math.round(n / 5) * 5; }
+function eur(n) { return n.toFixed(2).replace('.', ',') + ' €'; }
+function eur0(n) { return Math.round(n) + ' €'; }
+function fmtG(g) { return g >= 1000 ? it1(g / 1000) + ' kg' : r0(g) + ' g'; }
+
+// ---------- fabbisogno ----------
+function ffmOf(c) { return c.weight && c.bf > 0 ? c.weight * (1 - c.bf / 100) : null; }
+function rmrCalc(c) {
+  const w = c.weight, h = c.height, a = c.age, male = c.sex === 'm';
+  const ffm = ffmOf(c); const all = {};
+  if (w && h && a && c.sex) {
+    all.mifflin = 10 * w + 6.25 * h - 5 * a + (male ? 5 : -161);
+    all.tenhaaf = 11.936 * w + 587.728 * (h / 100) - 8.129 * a + (male ? 191.027 : 0) + 29.279;
+  }
+  if (ffm) all.tenhaaf_ffm = 22.771 * ffm + 484.264;
+  let auto = c.athlete ? (ffm ? 'tenhaaf_ffm' : 'tenhaaf') : 'mifflin';
+  if (all[auto] == null) auto = Object.keys(all)[0] || null;
+  const pick = c.eq && c.eq !== 'auto' && all[c.eq] != null ? c.eq : auto;
+  return { all, auto, pick, val: pick ? all[pick] : null, ffm };
+}
+function energyPlan(c) {
+  const r = rmrCalc(c); if (!r.val) return null;
+  const laf = c.laf || 1.6; const tdee = r.val * laf;
+  let delta = 0;
+  if (c.goal === 'dim') delta = -(c.weight * (c.rate || 0.5) / 100 * KCAL_PER_KG_FAT / 7);
+  else if (c.goal === 'massa') delta = tdee * (c.surplus || 10) / 100;
+  return { rmr: r, laf, tdee, delta, target: tdee + delta };
+}
+function defPk(c) { return c.goal === 'dim' ? 2.0 : c.goal === 'massa' ? 1.8 : (c.athlete ? 1.6 : 1.0); }
+function asstProposal(c, dt, e) {
+  const w = c.weight; const pk = c.pk || defPk(c); const gk = c.gk || 0.9; const adj = (c.adj || {})[dt.id] || 0;
+  const kcal = e.target + adj; const P = round5(pk * w); const G = round5(gk * w); const C = Math.max(0, round5((kcal - 4 * P - 9 * G) / 4));
+  return { pk, gk, adj, kcal, P, G, C, real: 4 * P + 4 * C + 9 * G };
+}
+function rangeChip(v, lo, hi) { const ok = v >= lo - 1e-9 && v <= hi + 1e-9; return '<span class="chip ' + (ok ? 'ok' : 'warn') + '">' + (ok ? 'nell\'intervallo' : v < lo ? 'sotto' : 'sopra') + '</span>'; }
+function assistantHtml(c, d, dt) {
+  const e = energyPlan(c);
+  let h = '<div class="card stack" style="gap:10px;border-color:var(--greenln)"><div class="row"><h3>Assistente del piano</h3><button class="btn link right" onclick="refsSheet()">Fonti</button>' + (e ? '<button class="btn xs" id="asstToggle" onclick="S.asst=!S.asst;render()">' + (S.asst ? 'Chiudi' : 'Apri') + '</button>' : '') + '</div>';
+  if (!e) return h + '<div class="small mut">Per stimare il fabbisogno servono sesso, età, altezza e peso del cliente.</div><button class="btn" onclick="S.tab=\'dati\';render()">Completa la scheda cliente</button></div>';
+  const p = asstProposal(c, dt, e); const w = c.weight;
+  if (!S.asst) return h + '<div class="small" style="color:var(--ink2)">Dispendio stimato <b>' + itK(e.tdee) + ' kcal</b> · obiettivo medio <b>' + itK(e.target) + ' kcal</b> · proposta per «' + esc(dt.name) + '»: P ' + p.P + ' · C ' + p.C + ' · G ' + p.G + ' g</div></div>';
+  const r = e.rmr;
+  // 1. metabolismo
+  h += '<div><label class="lab small" for="as_eq">Metabolismo a riposo</label><select class="inp" id="as_eq" onchange="asstSet(\'eq\',this.value)"><option value="auto"' + (!c.eq || c.eq === 'auto' ? ' selected' : '') + '>Automatica: ' + EQS[r.auto] + ' · ' + itK(r.all[r.auto]) + ' kcal</option>' + Object.keys(r.all).map(k => '<option value="' + k + '"' + (c.eq === k ? ' selected' : '') + '>' + EQS[k] + ' · ' + itK(r.all[k]) + ' kcal</option>').join('') + '</select><div class="small mut" style="margin-top:3px">' + (c.athlete ? 'Negli atleti le equazioni generali sbagliano in modo sistematico: uso quella derivata da atleti.' : 'Per adulti non atleti Mifflin-St Jeor è quella che più spesso cade entro il 10% del valore misurato.') + (r.ffm ? '' : ' Con la percentuale di grasso posso usare la massa magra.') + '</div></div>';
+  // 2. attività
+  h += '<div><label class="lab small" for="as_laf">Livello di attività (LAF)</label><select class="inp" id="as_laf" onchange="asstSet(\'laf\',num(this.value))">' + LAFS.map(l => '<option value="' + l[0] + '"' + (Math.abs(e.laf - l[0]) < 0.01 ? ' selected' : '') + '>' + String(l[0]).replace('.', ',') + ' · ' + l[1] + '</option>').join('') + '</select><div class="small" style="margin-top:3px">Dispendio stimato: <b>' + itK(e.tdee) + ' kcal</b> al giorno</div></div>';
+  // 3. obiettivo
+  h += '<div class="g2 end"><div><label class="lab small" for="as_goal">Obiettivo</label><select class="inp" id="as_goal" onchange="asstSet(\'goal\',this.value)">' + Object.keys(GOALS).map(k => '<option value="' + k + '"' + ((c.goal || 'mant') === k ? ' selected' : '') + '>' + GOALS[k] + '</option>').join('') + '</select></div>';
+  if (c.goal === 'dim') h += '<div><label class="lab small" for="as_rate">Ritmo (% a settimana)</label><input class="inp n" id="as_rate" type="number" inputmode="decimal" step="0.1" min="0.1" max="1.5" value="' + (c.rate || 0.5) + '" onchange="asstSet(\'rate\',clamp(num(this.value,0.5),0.1,1.5))"></div>';
+  else if (c.goal === 'massa') h += '<div><label class="lab small" for="as_sur">Surplus (%)</label><input class="inp n" id="as_sur" type="number" inputmode="decimal" step="1" min="1" max="25" value="' + (c.surplus || 10) + '" onchange="asstSet(\'surplus\',clamp(num(this.value,10),1,25))"></div>';
+  else h += '<div></div>';
+  h += '</div>';
+  if (c.goal === 'dim') { const rate = c.rate || 0.5; h += '<div class="hint' + (rate > 1 ? ' warn' : '') + '">Deficit di ' + itK(-e.delta) + ' kcal al giorno, circa ' + it2(w * rate / 100) + ' kg a settimana. Per conservare la massa magra il riferimento è 0,5–1% del peso a settimana.</div>'; }
+  if (c.goal === 'massa') h += '<div class="hint">Surplus di ' + itK(e.delta) + ' kcal al giorno. Per la massa non c\'è un valore condiviso quanto per il dimagrimento: 5–15% è una scelta pratica, da verificare con il peso.</div>';
+  h += '<div class="row" style="border-top:1px solid var(--line2);padding-top:10px"><span>Obiettivo calorico medio</span><span class="num right" id="as_target">' + itK(e.target) + '</span><span class="mut">kcal</span></div>';
+  // 4. giornata e macro
+  h += '<div class="b" style="margin-top:2px">Proposta per «' + esc(dt.name) + '»</div><div class="g3"><div><label class="lab small" for="as_adj">Variazione kcal</label><input class="inp n" id="as_adj" type="number" inputmode="numeric" step="50" value="' + p.adj + '" onchange="asstAdj(num(this.value))"></div><div><label class="lab small" for="as_pk">Proteine g/kg</label><input class="inp n" id="as_pk" type="number" inputmode="decimal" step="0.1" value="' + p.pk + '" onchange="asstSet(\'pk\',clamp(num(this.value,1.6),0.5,4))"></div><div><label class="lab small" for="as_gk">Grassi g/kg</label><input class="inp n" id="as_gk" type="number" inputmode="decimal" step="0.1" value="' + p.gk + '" onchange="asstSet(\'gk\',clamp(num(this.value,0.9),0.3,2.5))"></div></div><div class="small mut">«Variazione» sposta le calorie di questo tipo di giornata rispetto alla media, ad esempio +150 nei giorni di allenamento e −200 nel riposo. I carboidrati prendono le calorie che restano.</div>';
+  const fatPct = p.real ? 9 * p.G / p.real * 100 : 0; const ck = p.C / w; const load = LOADS[dt.load || 'moderato'] || LOADS.moderato;
+  const defLo = r.ffm ? 2.3 * r.ffm / w : null, defHi = r.ffm ? 3.1 * r.ffm / w : null;
+  h += '<div class="list">';
+  h += '<div class="row w"><div class="grow"><b>Proteine ' + p.P + ' g</b> <span class="mut">· ' + it1(p.P / w) + ' g/kg</span><div class="small mut">Riferimenti: 0,8 g/kg come minimo dell\'adulto; 1,2–2,0 g/kg per chi si allena' + (c.goal === 'dim' && defLo ? '; in deficit con i pesi 2,3–3,1 g per kg di massa magra, cioè ' + it1(defLo) + '–' + it1(defHi) + ' g/kg per questo cliente' : '') + '.</div></div>' + (c.goal === 'dim' && defLo ? rangeChip(p.P / w, Math.min(1.2, defLo), defHi) : c.athlete ? rangeChip(p.P / w, 1.2, 2.0) : rangeChip(p.P / w, 0.8, 2.0)) + '</div>';
+  h += '<div class="row w"><div class="grow"><b>Grassi ' + p.G + ' g</b> <span class="mut">· ' + r0(fatPct) + '% delle calorie</span><div class="small mut">Riferimento: 20–35% dell\'energia. Sotto il 20% si riducono vitamine liposolubili e acidi grassi essenziali.</div></div>' + rangeChip(fatPct, 20, 35) + '</div>';
+  h += '<div class="row w"><div class="grow"><b>Carboidrati ' + p.C + ' g</b> <span class="mut">· ' + it1(ck) + ' g/kg</span><div class="small mut">' + (load.r ? 'Riferimento per carico «' + load.label.split(':')[0].toLowerCase() + '»: ' + load.r[0] + '–' + load.r[1] + ' g/kg, cioè ' + r0(load.r[0] * w) + '–' + r0(load.r[1] * w) + ' g. La tabella nasce per gli sport di resistenza: nei pesi e nel dimagrimento si sta spesso sotto.' : 'Giorno di riposo: nessun intervallo specifico per carico.') + '</div></div>' + (load.r ? rangeChip(ck, load.r[0], load.r[1]) : '') + '</div>';
+  h += '</div>';
+  h += '<div class="row" style="border-top:1px solid var(--line2);padding-top:10px"><span>Calorie della proposta</span><span class="b right">' + itK(p.real) + ' kcal</span></div>';
+  h += '<div class="g2"><button class="btn p" id="as_apply" onclick="asstApply()">Applica a «' + esc(dt.name) + '»</button><button class="btn" onclick="asstWS()">Acqua e sale di riferimento</button></div>';
+  h += '<div class="small mut">Sono stime da equazioni: sul singolo l\'errore può superare il 10%. Dopo 2–3 settimane il peso reale dice se il numero era giusto.</div></div>';
+  return h;
+}
+function asstSet(k, v) { const c = clientById(S.clientId); c[k] = v; persist(); render(); }
+function asstAdj(v) { const c = clientById(S.clientId); if (!c.adj) c.adj = {}; c.adj[_dt().id] = v; persist(); render(); }
+function asstApply() {
+  const c = clientById(S.clientId); const dt = _dt(); const e = energyPlan(c); if (!e) return;
+  const p = asstProposal(c, dt, e); dt.targets.p = p.P; dt.targets.c = p.C; dt.targets.g = p.G; toast('Obiettivi aggiornati'); touch();
+}
+function asstWS() { const c = clientById(S.clientId); const dt = _dt(); dt.targets.water = c.sex === 'f' ? 2 : 2.5; dt.targets.salt = 5; toast('Acqua ' + it1(dt.targets.water) + ' L, sale 5 g'); touch(); }
+
+// ---------- controlli sul piano ----------
+function planChecks(c, d, dt) {
+  const out = []; const T = dt.targets; const kcal = dtKcal(dt); const w = c.weight;
+  const e = energyPlan(c);
+  if (w) {
+    if (T.p / w < 0.8) out.push({ k: 'warn', t: 'Proteine a ' + it1(T.p / w) + ' g/kg: sotto 0,8 g/kg, la quota minima dell\'adulto.' });
+    const load = LOADS[dt.load || 'moderato'];
+    if (load && load.r) { const ck = T.c / w; if (ck < load.r[0]) out.push({ k: 'info', t: 'Carboidrati a ' + it1(ck) + ' g/kg: sotto l\'intervallo per questo carico di allenamento (' + load.r[0] + '–' + load.r[1] + ' g/kg). Normale in dimagrimento o con i pesi; da valutare negli sport di resistenza.' }); else if (ck > load.r[1]) out.push({ k: 'info', t: 'Carboidrati a ' + it1(ck) + ' g/kg: sopra l\'intervallo per questo carico (' + load.r[0] + '–' + load.r[1] + ' g/kg).' }); }
+  }
+  if (kcal > 0) { const fp = 9 * T.g / kcal * 100; if (fp < 20) out.push({ k: 'warn', t: 'Grassi al ' + r0(fp) + '% delle calorie: sotto il 20%. In preparazione gara si scende fino al 15%, ma per periodi brevi.' }); else if (fp > 35) out.push({ k: 'info', t: 'Grassi al ' + r0(fp) + '% delle calorie: sopra il 35% di riferimento.' }); }
+  if (e && kcal < e.rmr.val) out.push({ k: 'warn', t: 'Calorie (' + itK(kcal) + ') sotto il metabolismo a riposo stimato (' + itK(e.rmr.val) + ' kcal).' });
+  const ffm = ffmOf(c);
+  if (ffm && dt.eee > 0) { const ea = (kcal - dt.eee) / ffm; if (ea < 30) out.push({ k: 'warn', t: 'Disponibilità energetica ' + r0(ea) + ' kcal per kg di massa magra: sotto 30, valore usato come indicatore di rischio (REDs) se la situazione si prolunga.' }); else out.push({ k: 'ok', t: 'Disponibilità energetica ' + r0(ea) + ' kcal per kg di massa magra.' }); }
+  if (T.salt > 5) out.push({ k: 'info', t: 'Sale a ' + it1(T.salt) + ' g: l\'OMS raccomanda meno di 5 g al giorno per l\'adulto.' });
+  const wRef = c.sex === 'f' ? 2 : 2.5;
+  if (T.water > 0 && T.water < wRef - 0.6) out.push({ k: 'info', t: 'Acqua a ' + it1(T.water) + ' L: il riferimento EFSA è ' + it1(wRef) + ' L di acqua totale, di cui circa il 20% arriva dal cibo.' });
+  (d.supps || []).forEach(sp => { const m = suppWarn(sp); if (m) out.push({ k: 'warn', t: sp.name + ': ' + m }); });
+  return out;
+}
+function checksHtml(c, d, dt) {
+  const list = planChecks(c, d, dt); const bad = list.filter(x => x.k !== 'ok');
+  let h = '<div class="card stack" style="gap:8px" id="checksCard"><div class="row"><h3>Controlli</h3><span class="chip ' + (bad.length ? 'warn' : 'ok') + ' right">' + (bad.length ? bad.length + (bad.length === 1 ? ' avviso' : ' avvisi') : 'tutto negli intervalli') + '</span></div>';
+  if (!c.weight) h += '<div class="small mut">Senza il peso del cliente posso controllare solo percentuali e sale.</div>';
+  list.forEach(x => { h += '<div class="hint' + (x.k === 'warn' ? ' warn' : x.k === 'ok' ? ' ok' : '') + '">' + esc(x.t) + '</div>'; });
+  if (!list.length) h += '<div class="small mut">Proteine, grassi, carboidrati, sale e acqua di «' + esc(dt.name) + '» sono dentro gli intervalli di riferimento.</div>';
+  h += '<div class="small mut">Gli avvisi non bloccano nulla: segnalano dove il piano esce dai riferimenti, e decide il professionista.</div></div>';
+  return h;
+}
+function loadRowHtml(dt) {
+  return '<div class="g2 end"><div><label class="lab small" for="dt_load">Carico di allenamento del giorno</label><select class="inp" id="dt_load" onchange="dte(\'load\',this.value)">' + Object.keys(LOADS).map(k => '<option value="' + k + '"' + ((dt.load || 'moderato') === k ? ' selected' : '') + '>' + LOADS[k].label + '</option>').join('') + '</select></div><div><label class="lab small" for="dt_eee">Kcal spese in allenamento (facoltativo)</label><input class="inp n" id="dt_eee" type="number" inputmode="numeric" step="50" value="' + (dt.eee || '') + '" placeholder="es. 400" onchange="dte(\'eee\',num(this.value)||null)"></div></div>';
+}
+
+// ---------- scheda cliente (Dati) ----------
+function clientProfileHtml(c) {
+  const e = energyPlan(c);
+  let h = '<div class="card stack"><h3>Scheda cliente</h3><div class="g2"><div><label class="lab small" for="cName">Nome</label><input class="inp" id="cName" value="' + esc(c.name) + '" onchange="profSet(\'name\',this.value)"></div><div><div class="lab small">Sesso</div><div class="seg"><button class="' + (c.sex === 'm' ? 'on' : '') + '" onclick="profSet(\'sex\',\'m\')">Uomo</button><button class="' + (c.sex === 'f' ? 'on' : '') + '" onclick="profSet(\'sex\',\'f\')">Donna</button></div></div></div>';
+  h += '<div class="gauto">' + [['age', 'Età (anni)', 1], ['height', 'Altezza (cm)', 1], ['weight', 'Peso (kg)', 0.1], ['bf', 'Grasso corporeo (%)', 0.5]].map(x => '<div><label class="lab small" for="pf_' + x[0] + '">' + x[1] + '</label><input class="inp n" id="pf_' + x[0] + '" type="number" inputmode="decimal" step="' + x[2] + '" value="' + (c[x[0]] == null ? '' : c[x[0]]) + '" onchange="profSet(\'' + x[0] + '\',num(this.value)||null)"></div>').join('') + '</div>';
+  h += '<div class="small mut">La percentuale di grasso è facoltativa: se c\'è, calcolo massa magra, proteine in deficit e disponibilità energetica.</div>';
+  h += '<label class="row" style="padding:4px 0"><input type="checkbox" id="pf_ath" style="width:20px;height:20px;accent-color:var(--green)"' + (c.athlete ? ' checked' : '') + ' onchange="profSet(\'athlete\',this.checked)"><span>Atleta o sportivo agonista (uso equazioni e intervalli per sportivi)</span></label>';
+  h += '<div class="g2"><div><label class="lab small" for="pf_laf">Livello di attività</label><select class="inp" id="pf_laf" onchange="profSet(\'laf\',num(this.value))">' + LAFS.map(l => '<option value="' + l[0] + '"' + (Math.abs((c.laf || 1.6) - l[0]) < 0.01 ? ' selected' : '') + '>' + l[1] + '</option>').join('') + '</select></div><div><label class="lab small" for="pf_goal">Obiettivo</label><select class="inp" id="pf_goal" onchange="profSet(\'goal\',this.value)">' + Object.keys(GOALS).map(k => '<option value="' + k + '"' + ((c.goal || 'mant') === k ? ' selected' : '') + '>' + GOALS[k] + '</option>').join('') + '</select></div></div>';
+  if (e) h += '<div class="hint">Metabolismo a riposo stimato ' + itK(e.rmr.val) + ' kcal (' + EQS[e.rmr.pick] + '), dispendio ' + itK(e.tdee) + ' kcal' + (e.rmr.ffm ? ', massa magra ' + it1(e.rmr.ffm) + ' kg' : '') + '. I dettagli e la proposta di macro sono nell\'assistente, scheda Piano.</div>';
+  else h += '<div class="hint">Con sesso, età, altezza e peso l\'assistente del piano stima il fabbisogno.</div>';
+  h += '<div class="small mut">Qui stanno solo i dati che servono ai calcoli. Patologie, farmaci ed esami arriveranno con gli account, dove si possono proteggere come dati sanitari.</div>';
+  h += (c.self ? '<div class="hint">Questo è il cliente collegato alla parte Cliente di questo telefono.</div>' : '<button class="btn danger" onclick="askConfirm(\'Eliminare ' + esc(c.name).replace(/'/g, '') + ' con piano e diario?\',\'Elimina\',deleteClient)">Elimina cliente</button>') + '</div>';
+  return h;
+}
+function profSet(k, v) { const c = clientById(S.clientId); c[k] = v; persist(); render(); }
+
+// ---------- integratori ----------
+const SUPP_GROUPS = [['perf', 'Prove solide per la prestazione'], ['food', 'Alimenti per comodità'], ['gen', 'Apporto adeguato'], ['med', 'Solo con carenza documentata'], ['c', 'Nessun beneficio dimostrato']];
+const SUPP_WHEN = ['Quando preferisci', 'Mattina', 'Con i pasti', 'Pre-allenamento', 'Durante l\'allenamento', 'Post-allenamento', 'Sera'];
+const SUPP_UNITS = ['g', 'mg', 'mmol', 'ml', 'capsule', 'compresse', 'misurini', 'UI'];
+const SUPPS = [
+  { id: 'creatina', g: 'perf', name: 'Creatina monoidrato', unit: 'g', def: () => 3, when: 'Quando preferisci', what: 'Aumenta le riserve di energia rapida del muscolo: utile negli sforzi brevi e ripetuti e nel lavoro con i pesi.', dose: '3–5 g al giorno, tutti i giorni. Il carico (circa 0,3 g/kg per 5–7 giorni) è facoltativo: senza carico si arriva allo stesso punto in circa 4 settimane.', warn: 'Solo adulti, non in gravidanza.', max: { v: 3, unit: 'g', hard: 6, t: 'In Italia il Ministero ammette 3 g al giorno; fino a 6 g solo per sportivi e per non più di un mese.', th: 'Sopra 6 g al giorno si esce dal limite ministeriale italiano.' }, src: [12, 15] },
+  { id: 'caffeina', g: 'perf', name: 'Caffeina', unit: 'mg', def: c => c.weight ? Math.min(200, round5(c.weight * 3)) : 200, when: 'Pre-allenamento', what: 'Riduce la percezione della fatica e migliora diversi tipi di prestazione, soprattutto di resistenza.', dose: '3–6 mg/kg circa 60 minuti prima dello sforzo; la dose minima efficace può essere 2 mg/kg.', warn: 'Risposta molto individuale: può disturbare il sonno e dare ansia. A 9 mg/kg molti effetti collaterali e nessun vantaggio. Conta anche il caffè bevuto nella giornata.', max: { v: 200, unit: 'mg', t: 'Negli integratori in commercio in Italia il massimo è 200 mg al giorno.' }, perKg: [3, 6, 'mg'], src: [13, 15] },
+  { id: 'betaalanina', g: 'perf', name: 'Beta-alanina', unit: 'g', def: () => 3.2, when: 'Con i pasti', what: 'Aumenta la carnosina del muscolo, che tampona l\'acidità negli sforzi intensi di qualche minuto.', dose: '3,2–6,4 g al giorno per almeno 4 settimane, divisi in più assunzioni.', warn: 'Con dosi singole grandi può dare formicolio alla pelle: dividere la dose.', src: [10, 11] },
+  { id: 'bicarbonato', g: 'perf', name: 'Bicarbonato di sodio', unit: 'g', def: c => c.weight ? Math.round(c.weight * 0.2) : 15, when: 'Pre-allenamento', what: 'Tampona l\'acidità nel sangue negli sforzi massimali di 1–10 minuti.', dose: '0,2–0,4 g/kg 60–150 minuti prima dello sforzo, anche in dosi divise.', warn: 'Disturbi intestinali frequenti e molto sodio: da provare sempre in allenamento, mai la prima volta in gara.', perKg: [0.2, 0.4, 'g'], src: [10, 11] },
+  { id: 'nitrati', g: 'perf', name: 'Nitrati (succo di barbabietola)', unit: 'mmol', def: () => 6, when: 'Pre-allenamento', what: 'Migliorano l\'efficienza del muscolo negli sforzi di resistenza.', dose: 'Circa 5–9 mmol di nitrati (310–560 mg) 2–2,5 ore prima.', warn: 'I mmol o mg per porzione sono in etichetta. Da provare in allenamento.', src: [10, 11] },
+  { id: 'proteine', g: 'food', name: 'Proteine in polvere', unit: 'g', def: () => 30, when: 'Post-allenamento', what: 'Un modo comodo per raggiungere le proteine del piano quando il cibo non basta.', dose: 'Quanto serve a coprire le proteine del piano: circa 0,25 g/kg per pasto, 20–40 g.', warn: 'È un alimento: le sue calorie e proteine vanno contate nel pasto (lo trovi tra gli alimenti).', src: [5, 11] },
+  { id: 'carbo', g: 'food', name: 'Carboidrati in allenamento (gel o bevanda)', unit: 'g', def: () => 30, when: 'Durante l\'allenamento', what: 'Energia durante gli sforzi lunghi.', dose: '30–60 g l\'ora per sforzi di 1–2,5 ore; fino a 90 g l\'ora oltre le 2,5 ore. Sotto i 45 minuti non servono.', warn: 'Sono carboidrati della giornata. L\'intestino va abituato in allenamento.', src: [4, 11] },
+  { id: 'elettroliti', g: 'food', name: 'Elettroliti', unit: 'compresse', def: () => 1, when: 'Durante l\'allenamento', what: 'Reintegrano il sodio perso con il sudore negli sforzi lunghi o al caldo.', dose: 'Secondo durata e sudorazione.', warn: 'Contengono sodio: conta nel sale della giornata.', src: [11] },
+  { id: 'omega3', g: 'gen', name: 'Omega-3 (EPA + DHA)', unit: 'mg', def: () => 250, when: 'Con i pasti', what: 'Acidi grassi che il corpo non produce a sufficienza; si trovano nel pesce grasso.', dose: '250 mg al giorno di EPA + DHA è l\'apporto adeguato per l\'adulto: si copre anche con il pesce.', warn: 'Fino a 5 g al giorno in più non destano timori di sicurezza negli adulti. Per la prestazione le prove sono ancora in formazione.', src: [14, 11] },
+  { id: 'vitd', g: 'med', name: 'Vitamina D', unit: 'UI', def: () => 1000, when: 'Con i pasti', what: 'Serve a ossa e muscoli; la carenza è frequente in inverno.', dose: 'Secondo il valore nel sangue.', warn: 'Ha senso con una carenza documentata da un esame recente.', src: [11, 10] },
+  { id: 'ferro', g: 'med', name: 'Ferro', unit: 'mg', def: () => 30, when: 'Mattina', what: 'Serve a trasportare ossigeno; la carenza riduce la prestazione.', dose: 'Secondo ferritina ed emocromo.', warn: 'Solo con una carenza documentata: in eccesso fa danni.', src: [11, 10] },
+  { id: 'multi', g: 'med', name: 'Multivitaminico', unit: 'compresse', def: () => 1, when: 'Mattina', what: 'Copre piccoli vuoti quando la dieta è molto ristretta.', dose: 'Una dose al giorno.', warn: 'Con un\'alimentazione varia e calorie sufficienti di norma non serve.', src: [11, 3] },
+  { id: 'calcio', g: 'med', name: 'Calcio', unit: 'mg', def: () => 500, when: 'Con i pasti', what: 'Serve alle ossa quando latticini e alimenti ricchi di calcio mancano.', dose: 'Secondo quanto ne arriva dal cibo.', warn: 'Da valutare sul diario alimentare.', src: [11] },
+  { id: 'probiotici', g: 'med', name: 'Probiotici', unit: 'capsule', def: () => 1, when: 'Mattina', what: 'Usati per disturbi intestinali e nei viaggi.', dose: 'Secondo il prodotto.', warn: 'Uso mirato a un bisogno preciso.', src: [11] },
+  { id: 'bcaa', g: 'c', name: 'BCAA', unit: 'g', def: () => 5, when: 'Pre-allenamento', what: 'Aminoacidi ramificati.', dose: 'Nessuna dose consigliata dalle linee guida.', warn: 'Nessun beneficio dimostrato se le proteine del piano sono coperte. Limite ministeriale 5 g al giorno.', max: { v: 5, unit: 'g', t: 'Il limite ministeriale italiano è 5 g al giorno come somma di leucina, isoleucina e valina.' }, src: [11, 15] },
+  { id: 'magnesio', g: 'c', name: 'Magnesio', unit: 'mg', def: () => 300, when: 'Sera', what: 'Minerale.', dose: 'Nessuna dose consigliata per la prestazione.', warn: 'Nessun beneficio dimostrato sulla prestazione in chi non ha carenza.', src: [11] },
+  { id: 'hmb', g: 'c', name: 'HMB', unit: 'g', def: () => 3, when: 'Con i pasti', what: 'Derivato della leucina.', dose: 'Nessuna dose consigliata dalle linee guida.', warn: 'Nessun beneficio dimostrato o ricerca insufficiente.', src: [11] }
+];
+function suppCat(sp) { return SUPPS.find(x => x.id === sp.sid) || null; }
+function suppOnDay(sp, dt) { return !sp.dayTypes || sp.dayTypes === 'all' || sp.dayTypes.indexOf(dt.id) >= 0; }
+function suppDose(sp) { return String(sp.dose).replace('.', ',') + ' ' + sp.unit; }
+function suppWarn(sp) {
+  const cat = suppCat(sp); if (!cat || !cat.max || sp.unit !== cat.max.unit) return '';
+  if (cat.max.hard && sp.dose > cat.max.hard) return cat.max.th;
+  if (sp.dose > cat.max.v) return cat.max.t;
+  return '';
+}
+function suppDaysText(sp, plan) { if (!sp.dayTypes || sp.dayTypes === 'all') return 'tutti i giorni'; const n = plan.dayTypes.filter(d => sp.dayTypes.indexOf(d.id) >= 0).map(d => d.name); return n.length ? 'giorni «' + n.join('», «') + '»' : 'nessun giorno'; }
+function suppsEditorHtml(c, d) {
+  let h = '<div class="card stack" style="gap:10px" id="suppsCard"><div class="row"><h3>Integratori</h3><button class="btn xs right" id="suppAddBtn" onclick="suppCatalogSheet()">+ Aggiungi</button></div>';
+  if (!(d.supps || []).length) h += '<div class="small mut">Nessun integratore nel piano. Il catalogo li ordina per solidità delle prove, con dose usuale, attenzioni e fonte.</div>';
+  (d.supps || []).forEach((sp, i) => {
+    const w = suppWarn(sp); const cat = suppCat(sp);
+    h += '<div style="border-top:1px solid var(--line2);padding-top:10px"><div class="row w"><div class="grow"><b>' + esc(sp.name) + '</b> <span class="mut">· ' + esc(suppDose(sp)) + '</span><div class="small mut">' + esc(sp.when) + ' · ' + esc(suppDaysText(sp, d)) + '</div></div><button class="btn xs" onclick="suppEditSheet(' + i + ')">Modifica</button><button class="btn xs danger" onclick="suppDel(' + i + ')" aria-label="Togli integratore">✕</button></div>' + (w ? '<div class="hint warn" style="margin-top:6px">' + esc(w) + '</div>' : '') + (cat && cat.g === 'c' ? '<div class="hint" style="margin-top:6px">' + esc(cat.warn) + '</div>' : '') + (sp.note ? '<div class="small" style="margin-top:6px;color:var(--ink2)">Nota: ' + esc(sp.note) + '</div>' : '') + '</div>';
+  });
+  h += '<div class="small mut">Per chi è soggetto a controlli antidoping: scegliere prodotti con certificazione di lotto, perché alcuni integratori sono contaminati da sostanze vietate senza che l\'etichetta lo dica.</div></div>';
+  return h;
+}
+function suppCatalogSheet() {
+  let h = '<div class="stack"><h2>Aggiungi un integratore</h2><div class="small mut">Ordinati per solidità delle prove (consenso CIO 2018 e classificazione AIS).</div>';
+  SUPP_GROUPS.forEach(g => { h += '<div class="cathead">' + g[1] + '</div>' + SUPPS.filter(s => s.g === g[0]).map(s => '<button class="btn" style="justify-content:flex-start;text-align:left" onclick="suppEditSheet(null,\'' + s.id + '\')">' + esc(s.name) + '</button>').join(''); });
+  h += '<div class="cathead">Altro</div><button class="btn" style="justify-content:flex-start" onclick="suppEditSheet(null,null)">Scrivi tu il nome</button><button class="btn" onclick="sheetClose()">Annulla</button></div>';
+  sheetOpen(h);
+}
+function suppEditSheet(idx, sid) {
+  const c = clientById(S.clientId); const d = _d();
+  const cur = idx != null ? d.supps[idx] : null;
+  const cat = cur ? suppCat(cur) : SUPPS.find(x => x.id === sid) || null;
+  const sp = cur || { sid: cat ? cat.id : null, name: cat ? cat.name : '', dose: cat ? cat.def(c) : 1, unit: cat ? cat.unit : 'g', when: cat ? cat.when : SUPP_WHEN[0], dayTypes: 'all', note: '' };
+  window._suppIdx = idx; window._suppSid = sp.sid;
+  let h = '<div class="stack"><h2>' + (cat ? esc(cat.name) : 'Integratore') + '</h2>';
+  if (cat) {
+    h += '<div class="ex stack" style="gap:6px"><div class="small"><b>A cosa serve.</b> ' + esc(cat.what) + '</div><div class="small"><b>Dose usuale.</b> ' + esc(cat.dose) + (cat.perKg && c.weight ? ' Per ' + it1(c.weight) + ' kg: ' + r0(cat.perKg[0] * c.weight) + '–' + r0(cat.perKg[1] * c.weight) + ' ' + cat.perKg[2] + '.' : '') + '</div><div class="small"><b>Attenzioni.</b> ' + esc(cat.warn) + (cat.max ? ' ' + esc(cat.max.t) : '') + '</div><div class="small mut">Fonti: ' + cat.src.map(i => '<a href="' + REFS[i][1] + '" target="_blank" rel="noopener">' + esc(REFS[i][0]) + '</a>').join(' · ') + '</div></div>';
+  } else h += '<div><label class="lab small" for="su_name">Nome</label><input class="inp" id="su_name" value="' + esc(sp.name) + '" placeholder="es. Melatonina"></div>';
+  h += '<div class="g2"><div><label class="lab small" for="su_dose">Dose</label><input class="inp n" id="su_dose" type="number" inputmode="decimal" step="0.1" value="' + sp.dose + '"></div><div><label class="lab small" for="su_unit">Unità</label><select class="inp" id="su_unit">' + SUPP_UNITS.map(u => '<option' + (u === sp.unit ? ' selected' : '') + '>' + u + '</option>').join('') + '</select></div></div>';
+  h += '<div><label class="lab small" for="su_when">Quando</label><select class="inp" id="su_when">' + SUPP_WHEN.map(u => '<option' + (u === sp.when ? ' selected' : '') + '>' + esc(u) + '</option>').join('') + '</select></div>';
+  h += '<div><div class="lab small">In quali giorni</div><label class="row" style="padding:5px 0"><input type="checkbox" id="su_all" style="width:20px;height:20px;accent-color:var(--green)"' + (sp.dayTypes === 'all' ? ' checked' : '') + ' onchange="document.getElementById(\'su_days\').style.display=this.checked?\'none\':\'block\'"><span>Tutti i giorni</span></label><div id="su_days" style="display:' + (sp.dayTypes === 'all' ? 'none' : 'block') + '">' + d.dayTypes.map(x => '<label class="row" style="padding:5px 0"><input type="checkbox" class="su_dt" value="' + x.id + '" style="width:20px;height:20px;accent-color:var(--green)"' + (sp.dayTypes !== 'all' && sp.dayTypes.indexOf(x.id) >= 0 ? ' checked' : '') + '><span>Solo nei giorni «' + esc(x.name) + '»</span></label>').join('') + '</div></div>';
+  h += '<div><label class="lab small" for="su_note">Nota per il cliente (facoltativa)</label><input class="inp" id="su_note" value="' + esc(sp.note || '') + '" placeholder="es. sciolta in acqua, lontano dal caffè"></div>';
+  h += '<div class="g2"><button class="btn" onclick="sheetClose()">Annulla</button><button class="btn p" id="su_save" onclick="suppSave()">Salva</button></div></div>';
+  sheetOpen(h);
+}
+function suppSave() {
+  const d = _d(); const idx = window._suppIdx; const sid = window._suppSid; const cat = SUPPS.find(x => x.id === sid) || null;
+  const nameEl = document.getElementById('su_name'); const name = cat ? cat.name : (nameEl ? nameEl.value.trim() : '');
+  if (!name) { toast('Serve il nome'); return; }
+  const dose = num(document.getElementById('su_dose').value, 0); if (!(dose > 0)) { toast('Serve la dose'); return; }
+  const all = document.getElementById('su_all').checked;
+  const days = all ? 'all' : Array.prototype.slice.call(document.querySelectorAll('.su_dt')).filter(x => x.checked).map(x => x.value);
+  if (days !== 'all' && !days.length) { toast('Scegli almeno un tipo di giornata'); return; }
+  const sp = { id: idx != null ? d.supps[idx].id : uid(), sid: sid || null, name, dose, unit: document.getElementById('su_unit').value, when: document.getElementById('su_when').value, dayTypes: days, note: document.getElementById('su_note').value.trim() };
+  if (!d.supps) d.supps = [];
+  if (idx != null) d.supps[idx] = sp; else d.supps.push(sp);
+  sheetClose(); touch();
+}
+function suppDel(i) { const d = _d(); askConfirm('Togliere «' + d.supps[i].name + '» dal piano?', 'Togli', () => { _d().supps.splice(i, 1); touch(); }); }
+function suppsViewHtml(plan) {
+  if (!(plan.supps || []).length) return '';
+  return '<div class="card stack" style="gap:8px"><h2>Integratori</h2>' + plan.supps.map(sp => '<div style="border-top:1px solid var(--line2);padding-top:8px"><b>' + esc(sp.name) + '</b> <span class="mut">· ' + esc(suppDose(sp)) + '</span><div class="small mut">' + esc(sp.when) + ' · ' + esc(suppDaysText(sp, plan)) + '</div>' + (sp.note ? '<div class="small" style="color:var(--ink2);margin-top:3px">' + esc(sp.note) + '</div>' : '') + '</div>').join('') + '</div>';
+}
+function suppsToday(plan, dt) { return (plan.supps || []).filter(sp => suppOnDay(sp, dt)); }
+function suppsTodayHtml(me, plan, dt, log) {
+  const list = suppsToday(plan, dt); if (!list.length) return '';
+  const taken = (log && log.supps) || {}; const n = list.filter(sp => taken[sp.id]).length;
+  let h = '<div class="card" id="suppsToday"><div class="row" style="margin-bottom:6px"><span class="b">Integratori di oggi</span><span class="mut right small">' + n + ' di ' + list.length + '</span></div>';
+  list.forEach(sp => { const on = !!taken[sp.id]; h += '<div class="shoprow' + (on ? ' done' : '') + '"><button class="tickbtn" onclick="suppToggle(\'' + sp.id + '\')" aria-label="' + (on ? 'Togli la spunta a ' : 'Segna preso ') + esc(sp.name) + '"><span class="tick ' + (on ? '' : 'todo') + '">' + (on ? ICO.check : '') + '</span></button><button class="grow" style="text-align:left;border:0;background:transparent;padding:0" onclick="suppInfoSheet(\'' + sp.id + '\')"><span class="nm b">' + esc(sp.name) + '</span> <span class="mut">· ' + esc(suppDose(sp)) + '</span><div class="small mut">' + esc(sp.when) + (on ? ' · preso alle ' + esc(taken[sp.id]) : '') + '</div></button><span class="mut" aria-hidden="true">›</span></div>'; });
+  return h + '</div>';
+}
+function suppToggle(id) { const me = selfClient(); const log = logFor(me.id, S.date, true); if (!log.supps) log.supps = {}; if (log.supps[id]) delete log.supps[id]; else log.supps[id] = timeNow(); persist(); render(); }
+function suppInfoSheet(id) {
+  const me = selfClient(); const plan = planFor(me.id); const sp = plan.supps.find(x => x.id === id); if (!sp) return; const cat = suppCat(sp);
+  let h = '<div class="stack"><h2>' + esc(sp.name) + '</h2><div class="kv"><span>Dose del tuo piano</span><b>' + esc(suppDose(sp)) + '</b></div><div class="kv"><span>Quando</span><b>' + esc(sp.when) + '</b></div><div class="kv"><span>Giorni</span><b>' + esc(suppDaysText(sp, plan)) + '</b></div>';
+  if (sp.note) h += '<div class="hint">Dal tuo nutrizionista: ' + esc(sp.note) + '</div>';
+  if (cat) h += '<div class="ex stack" style="gap:6px"><div class="small"><b>A cosa serve.</b> ' + esc(cat.what) + '</div><div class="small"><b>Attenzioni.</b> ' + esc(cat.warn) + '</div></div>';
+  h += '<div class="small mut">La dose l\'ha decisa il tuo nutrizionista: non cambiarla da solo, e scrivigli se noti effetti che non ti aspettavi.</div><button class="btn wide" onclick="sheetClose()">Chiudi</button></div>';
+  sheetOpen(h);
+}
+function suppsMonitorHtml(c, plan, dt, log) {
+  const list = suppsToday(plan, dt); if (!list.length) return '';
+  const taken = (log && log.supps) || {}; const n = list.filter(sp => taken[sp.id]).length;
+  return '<div class="card" id="suppsMon"><div class="row" style="margin-bottom:8px"><span class="b" style="font-size:15px">Integratori</span><span class="chip ' + (n === list.length ? 'ok' : '') + ' right">' + n + ' di ' + list.length + ' presi</span></div><div class="list">' + list.map(sp => '<div class="row"><span class="tick ' + (taken[sp.id] ? '' : 'todo') + '">' + (taken[sp.id] ? ICO.check : '') + '</span><div class="grow"><b>' + esc(sp.name) + '</b> <span class="mut">· ' + esc(suppDose(sp)) + ' · ' + esc(sp.when) + '</span></div><span class="small mut">' + (taken[sp.id] ? 'alle ' + esc(taken[sp.id]) : 'non segnato') + '</span></div>').join('') + '</div></div>';
+}
+
+// ---------- spesa ----------
+const SHOP_CATS = ['verdure', 'frutta', 'carne', 'pesce', 'salumi', 'latticini', 'uova', 'cereali', 'legumi', 'grassi', 'frutta secca', 'dolci', 'bevande', 'condimenti', 'integratori', 'piatti', 'altro'];
+const SHOP_CAT_NAMES = { verdure: 'Verdura', frutta: 'Frutta', carne: 'Carne', pesce: 'Pesce', salumi: 'Salumi', latticini: 'Latticini', uova: 'Uova', cereali: 'Pasta, riso, pane', legumi: 'Legumi', grassi: 'Olio e grassi', 'frutta secca': 'Frutta secca e semi', dolci: 'Dolci e colazione', bevande: 'Bevande', condimenti: 'Condimenti', integratori: 'Integratori alimentari', piatti: 'Piatti pronti', altro: 'Altro' };
+function shopState(cid) {
+  if (!DB.shop) DB.shop = {};
+  if (!DB.shop[cid]) DB.shop[cid] = { days: 7, start: todayISO(), checked: {}, have: {}, extra: [] };
+  return DB.shop[cid];
+}
+function shopBuild(plan, cid, start, days) {
+  const acc = {}, occ = {}, supp = {}; let missing = 0, meals = 0;
+  for (let i = 0; i < days; i++) {
+    const iso = addDays(start, i); const dt = dayTypeFor(plan, iso, cid ? logFor(cid, iso) : null); if (!dt) continue;
+    dt.slots.forEach(s => {
+      const exs = (s.examples || []).filter(x => x.items && x.items.length);
+      if (!exs.length) { missing++; return; }
+      const n = occ[s.id] || 0; occ[s.id] = n + 1; meals++;
+      exs[n % exs.length].items.forEach(it => { acc[it.foodId] = (acc[it.foodId] || 0) + it.qty; });
+    });
+    (plan.supps || []).forEach(sp => { if (suppOnDay(sp, dt)) supp[sp.id] = (supp[sp.id] || 0) + 1; });
+  }
+  const items = Object.keys(acc).map(id => ({ f: foodById(id), qty: acc[id] })).filter(x => x.f)
+    .sort((a, b) => SHOP_CATS.indexOf(a.f.cat) - SHOP_CATS.indexOf(b.f.cat) || a.f.name.localeCompare(b.f.name));
+  return { items, missing, meals, supp };
+}
+function shopCost(f, qty) {
+  const need = f.price > 0 ? qty / 1000 * f.price : null; let packs = null, buyQty = qty, buy = need;
+  if (f.pack > 0) { packs = Math.ceil(qty / f.pack - 1e-9); buyQty = packs * f.pack; if (f.price > 0) buy = buyQty / 1000 * f.price; }
+  return { need, buy, packs, buyQty };
+}
+function shopQtyText(f, qty) {
+  const c = shopCost(f, qty);
+  if (c.packs != null) return c.packs + ' conf. da ' + fmtG(f.pack) + ' <span class="mut">· servono ' + fmtG(qty) + '</span>';
+  const up = Math.ceil(qty / 50) * 50; const p = (f.portions || [])[0];
+  return fmtG(up) + (p && p.g >= 30 ? ' <span class="mut">· circa ' + Math.ceil(qty / p.g) + ' × ' + esc(p.name) + '</span>' : '');
+}
+function shopTotals(list, st) {
+  let buy = 0, need = 0, noPrice = 0, n = 0, done = 0;
+  list.items.forEach(x => { const have = st && st.have[x.f.id]; const c = shopCost(x.f, x.qty); n++; if (st && (st.checked[x.f.id] || have)) done++; if (c.need == null) { noPrice++; return; } need += c.need; if (!have) buy += c.buy; });
+  return { buy, need, noPrice, n, done };
+}
+function pageSpesa() {
+  const me = selfClient(); const plan = me && planFor(me.id); if (!plan) return noPlanHtml();
+  const st = shopState(me.id); const end = addDays(st.start, st.days - 1);
+  const list = shopBuild(plan, me.id, st.start, st.days); const t = shopTotals(list, st);
+  let h = '<div class="stack"><div class="row"><h1>Spesa</h1><button class="btn sm right" onclick="shopCopy()">Copia la lista</button></div>';
+  h += '<div class="seg">' + [3, 7, 14].map(n => '<button class="' + (st.days === n ? 'on' : '') + '" onclick="shopDays(' + n + ')">' + n + ' giorni</button>').join('') + '</div>';
+  if (end < todayISO()) h += '<div class="notice">Questa lista copriva fino a ' + fmtDate(end).toLowerCase() + '. <button class="btn link" onclick="shopResetDo()">Fanne una nuova da oggi</button></div>';
+  h += '<div class="card"><div class="small mut">Spesa stimata</div><div class="row" style="align-items:baseline;gap:6px"><span class="num lg" id="shopTotal">circa ' + eur0(t.buy) + '</span></div><div class="small" style="color:var(--ink2);margin-top:2px">Ti basta per ' + st.days + ' giorni, da ' + fmtShort(st.start) + ' a ' + fmtShort(end) + ' · circa ' + eur(t.need / st.days) + ' al giorno di cibo consumato</div>' + barHtml(t.done, t.n, 'var(--green)') .replace('<div class="bar', '<div style="margin-top:10px" class="bar') + '<div class="small mut" style="margin-top:6px">' + t.done + ' di ' + t.n + ' presi o già in casa' + (t.buy - t.need > 1 ? ' · alla cassa paghi confezioni intere: circa ' + eur0(t.buy - t.need) + ' di cibo ti avanzano' : '') + '</div></div>';
+  if (list.missing) h += '<div class="notice">' + list.missing + (list.missing === 1 ? ' pasto del periodo non ha' : ' pasti del periodo non hanno') + ' un esempio nel piano: per quelli la lista non può sapere cosa comprare.</div>';
+  if (!list.items.length) h += '<div class="card mut">Il piano non ha pasti d\'esempio: la lista nasce da quelli.</div>';
+  // elenco
+  h += '<div class="card" id="shopList" style="padding-top:2px">'; let cat = null;
+  list.items.forEach(x => {
+    const f = x.f; if (f.cat !== cat) { cat = f.cat; h += '<div class="cathead">' + (SHOP_CAT_NAMES[cat] || cat) + '</div>'; }
+    const on = !!st.checked[f.id], have = !!st.have[f.id]; const c = shopCost(f, x.qty);
+    h += '<div class="shoprow' + (on || have ? ' done' : '') + '"><button class="tickbtn" onclick="shopToggle(\'' + f.id + '\')" aria-label="' + (on ? 'Togli la spunta a ' : 'Segna preso ') + esc(f.name) + '"><span class="tick ' + (on ? '' : have ? 'skip' : 'todo') + '">' + (on ? ICO.check : '') + '</span></button><button class="grow" style="text-align:left;border:0;background:transparent;padding:0" onclick="shopItemSheet(\'' + f.id + '\',' + x.qty + ')"><span class="nm b">' + esc(f.name) + '</span>' + (have ? ' <span class="chip" style="font-size:10px;padding:2px 7px">in casa</span>' : '') + '<div class="small">' + shopQtyText(f, x.qty) + '</div></button><span class="' + (have ? 'mut' : 'b') + '" style="white-space:nowrap">' + (c.buy == null ? '<span class="mut small">prezzo?</span>' : have ? '—' : eur(c.buy)) + '</span></div>';
+  });
+  h += '</div>';
+  // integratori
+  const sp = (plan.supps || []).filter(s => list.supp[s.id]);
+  if (sp.length) h += '<div class="card"><div class="b" style="margin-bottom:6px">Integratori del piano</div>' + sp.map(s => '<div class="kv"><span>' + esc(s.name) + '</span><span class="mut">' + esc(suppDose(s)) + ' × ' + list.supp[s.id] + ' giorni = ' + String(Math.round(s.dose * list.supp[s.id] * 10) / 10).replace('.', ',') + ' ' + esc(s.unit) + '</span></div>').join('') + '<div class="small mut">Controlla quanto ne hai ancora in casa.</div></div>';
+  // voci libere
+  h += '<div class="card stack" style="gap:8px"><div class="b">Altre cose da comprare</div>' + st.extra.map((e, i) => '<div class="shoprow' + (e.done ? ' done' : '') + '" style="border-top:0;padding:4px 0"><button class="tickbtn" onclick="shopExtraToggle(' + i + ')" aria-label="Spunta"><span class="tick ' + (e.done ? '' : 'todo') + '">' + (e.done ? ICO.check : '') + '</span></button><span class="grow nm">' + esc(e.text) + '</span><button class="btn xs" style="min-width:30px;padding:4px 7px" onclick="shopExtraDel(' + i + ')" aria-label="Togli">✕</button></div>').join('') + '<div class="row"><input class="inp grow" id="shopExtra" placeholder="es. carta forno, caffè" onkeydown="if(event.key===\'Enter\')shopAddExtra()" aria-label="Aggiungi una voce"><button class="btn" onclick="shopAddExtra()">Aggiungi</button></div></div>';
+  h += '<button class="btn" onclick="askConfirm(\'Ripartire con una lista nuova da oggi? Le spunte vengono tolte.\',\'Nuova lista\',shopResetDo)">Nuova lista da oggi</button>';
+  h += '<div class="small mut">La lista somma gli esempi del piano giorno per giorno (a rotazione se un pasto ne ha più di uno). I prezzi sono medie indicative' + (t.noPrice ? ', e ' + t.noPrice + (t.noPrice === 1 ? ' alimento non ha' : ' alimenti non hanno') + ' un prezzo' : '') + ': tocca un alimento per mettere quello del tuo supermercato.</div></div>';
+  return h;
+}
+function shopDays(n) { const st = shopState(selfClient().id); st.days = n; persist(); render(); }
+function shopToggle(id) { const st = shopState(selfClient().id); if (st.checked[id]) delete st.checked[id]; else st.checked[id] = true; persist(); render(); }
+function shopResetDo() { const st = shopState(selfClient().id); st.start = todayISO(); st.checked = {}; st.extra = st.extra.filter(e => !e.done); persist(); render(); toast('Lista nuova da oggi'); }
+function shopAddExtra() { const el = document.getElementById('shopExtra'); const v = el.value.trim(); if (!v) return; shopState(selfClient().id).extra.push({ text: v, done: false }); persist(); render(); }
+function shopExtraToggle(i) { const e = shopState(selfClient().id).extra[i]; e.done = !e.done; persist(); render(); }
+function shopExtraDel(i) { shopState(selfClient().id).extra.splice(i, 1); persist(); render(); }
+function shopItemSheet(id, qty) {
+  const f = foodById(id); const st = shopState(selfClient().id); window._shopId = id;
+  sheetOpen('<div class="stack"><div><h2>' + esc(f.name) + '</h2><div class="small mut">Nel periodo ne servono ' + fmtG(qty) + '</div></div><div class="g2"><div><label class="lab small" for="sh_price">Prezzo (€ al kg)</label><input class="inp n" id="sh_price" type="number" inputmode="decimal" step="0.1" value="' + (f.price || '') + '"></div><div><label class="lab small" for="sh_pack">Confezione (g, 0 = sfuso)</label><input class="inp n" id="sh_pack" type="number" inputmode="numeric" step="10" value="' + (f.pack || 0) + '"></div></div><label class="row" style="padding:4px 0"><input type="checkbox" id="sh_have" style="width:20px;height:20px;accent-color:var(--green)"' + (st.have[id] ? ' checked' : '') + '><span>Ce l\'ho già in casa (non contarlo nella spesa)</span></label><div class="g2"><button class="btn" onclick="sheetClose()">Annulla</button><button class="btn p" id="sh_save" onclick="shopItemSave()">Salva</button></div></div>');
+}
+function shopItemSave() {
+  const id = window._shopId; const f = foodById(id); const st = shopState(selfClient().id);
+  f.price = num(document.getElementById('sh_price').value) || null; f.pack = Math.max(0, num(document.getElementById('sh_pack').value));
+  if (document.getElementById('sh_have').checked) st.have[id] = true; else delete st.have[id];
+  persist(); sheetClose(); render();
+}
+function shopText(plan, list, days) {
+  let t = 'Spesa per ' + days + ' giorni\n'; let cat = null;
+  list.items.forEach(x => { if (x.f.cat !== cat) { cat = x.f.cat; t += '\n' + (SHOP_CAT_NAMES[cat] || cat).toUpperCase() + '\n'; } const c = shopCost(x.f, x.qty); t += '- ' + x.f.name + ': ' + (c.packs != null ? c.packs + ' conf. da ' + fmtG(x.f.pack) : fmtG(Math.ceil(x.qty / 50) * 50)) + '\n'; });
+  return t;
+}
+function shopCopy() {
+  const me = selfClient(); const plan = planFor(me.id); const st = shopState(me.id); const list = shopBuild(plan, me.id, st.start, st.days);
+  let t = shopText(plan, list, st.days); if (st.extra.length) t += '\nALTRO\n' + st.extra.map(e => '- ' + e.text).join('\n') + '\n';
+  try { navigator.clipboard.writeText(t).then(() => toast('Lista copiata'), () => toast('Copia non riuscita')); } catch (e) { toast('Copia non riuscita'); }
+}
+// lato nutrizionista: quanto costa il piano
+function costCardHtml(c, d) {
+  const list = shopBuild(d, null, todayISO(), 7); const t = shopTotals(list, null);
+  let h = '<div class="card stack" style="gap:8px" id="costCard"><div class="row"><h3>Spesa e costo del piano</h3><button class="btn xs right" onclick="costSheet()">Vedi la lista</button></div>';
+  if (!list.items.length) return h + '<div class="small mut">Aggiungi pasti d\'esempio: da quelli nascono la lista della spesa del cliente e la stima del costo.</div></div>';
+  h += '<div class="row" style="align-items:baseline;gap:6px"><span class="num" id="costWeek">circa ' + eur0(t.need) + '</span><span class="mut">di cibo a settimana · ' + eur(t.need / 7) + ' al giorno</span></div>';
+  h += '<div class="small mut">Stima con prezzi medi indicativi, sugli esempi dei prossimi 7 giorni (' + list.meals + ' pasti). La prima spesa completa, a confezioni intere, è circa ' + eur0(t.buy) + '.' + (list.missing ? ' ' + list.missing + ' pasti senza esempio non sono contati.' : '') + (t.noPrice ? ' ' + t.noPrice + ' alimenti senza prezzo.' : '') + '</div>';
+  const top = list.items.map(x => ({ x, c: shopCost(x.f, x.qty).need || 0 })).sort((a, b) => b.c - a.c).slice(0, 3).filter(y => y.c > 0);
+  if (top.length) h += '<div class="small" style="color:var(--ink2)">Pesano di più: ' + top.map(y => esc(y.x.f.name) + ' ' + eur0(y.c)).join(', ') + '.</div>';
+  return h + '</div>';
+}
+function costSheet() {
+  const d = _d(); const list = shopBuild(d, null, todayISO(), 7); let cat = null;
+  let h = '<div class="stack"><h2>Lista per 7 giorni</h2><div class="small mut">Quello che il cliente trova nella scheda Spesa.</div><div class="card" style="padding-top:2px">';
+  list.items.forEach(x => { if (x.f.cat !== cat) { cat = x.f.cat; h += '<div class="cathead">' + (SHOP_CAT_NAMES[cat] || cat) + '</div>'; } const c = shopCost(x.f, x.qty); h += '<div class="shoprow"><div class="grow"><b>' + esc(x.f.name) + '</b><div class="small">' + shopQtyText(x.f, x.qty) + '</div></div><span style="white-space:nowrap">' + (c.need == null ? '<span class="mut small">prezzo?</span>' : eur(c.need)) + '</span></div>'; });
+  sheetOpen(h + '</div><button class="btn wide" onclick="sheetClose()">Chiudi</button></div>');
+}
+
+// ---------- migrazione dati dalla build 1 ----------
+function migrate() {
+  if (!DB.shop) DB.shop = {};
+  DB.foods.forEach(f => { if (f.src === 'base' && PRICES[f.name]) { if (f.price === undefined) f.price = PRICES[f.name][0]; if (f.pack === undefined) f.pack = PRICES[f.name][1]; } if (f.pack === undefined) f.pack = 0; if (f.price === undefined) f.price = null; });
+  Object.keys(DB.plans || {}).forEach(cid => ['draft', 'active'].forEach(k => { const p = DB.plans[cid][k]; if (!p) return; if (!p.supps) p.supps = []; p.dayTypes.forEach(dt => { if (!dt.load) dt.load = /ripos/i.test(dt.name) ? 'riposo' : 'moderato'; if (dt.eee === undefined) dt.eee = null; }); }));
+  DB.clients.forEach(c => { if (c.laf === undefined) c.laf = 1.6; if (c.goal === undefined) c.goal = 'mant'; if (c.athlete === undefined) c.athlete = false; });
+  DB.v = 2;
+}
 // ===== LATO NUTRIZIONISTA =====
 function clientLine(c) {
   const plan = planFor(c.id);
@@ -959,7 +1397,7 @@ function pageClienti() {
 }
 function newClientSheet() {
   sheetOpen('<div class="stack"><h2>Nuovo cliente</h2><div><label class="lab" for="ncName">Nome</label><input class="inp" id="ncName" placeholder="Nome e cognome"></div><div><label class="lab" for="ncW">Peso (kg)</label><input class="inp n" id="ncW" type="number" inputmode="decimal" placeholder="es. 72"></div><button class="btn p wide" onclick="newClientDo()">Aggiungi</button></div>');
-  setTimeout(() => { const i = document.getElementById('ncName'); if (i) i.focus(); }, 50);
+  { const i = document.getElementById('ncName'); if (i) i.focus(); }
 }
 function newClientDo() { const n = document.getElementById('ncName').value.trim(); if (!n) { toast('Serve il nome'); return; } const c = addClient(n, num(document.getElementById('ncW').value) || null, false); sheetClose(); openClient(c.id); }
 function openClient(id) { S.clientId = id; S.tab = planFor(id) ? 'mon' : 'piano'; S.dt = 0; S.exEdit = null; go('cliente'); }
@@ -972,7 +1410,7 @@ function pageCliente() {
   h += '<div class="seg">' + [['mon', 'Monitoraggio'], ['piano', 'Piano'], ['dati', 'Dati']].map(t => '<button class="' + (S.tab === t[0] ? 'on' : '') + '" onclick="S.tab=\'' + t[0] + '\';render()">' + t[1] + '</button>').join('') + '</div>';
   if (S.tab === 'mon') h += monitorHtml(c);
   else if (S.tab === 'piano') h += planEditorHtml(c);
-  else h += clientDataHtml(c);
+  else h += clientProfileHtml(c);
   h += '</div>';
   return h;
 }
@@ -1002,6 +1440,7 @@ function monitorHtml(c) {
   h += '<div class="card"><div class="small mut">Macro ' + (isToday && !a.closed ? "a quest'ora" : '') + '</div><div class="stack" style="gap:3px;margin-top:6px;font-size:13px">' + ['p', 'c', 'g'].map(k => '<div class="row"><span>' + macroName(k)[0] + ' ' + r0(a.real[k]) + ' / ' + r0(exp[k]) + ' g</span><span class="right">' + dcell(a.real[k], exp[k]) + '</span></div>').join('') + '</div></div>';
   h += '<div class="card"><div class="small mut">Sale</div><div class="num">' + it1(a.salt) + ' g</div><div class="small mut">obiettivo ' + it1(T.salt) + ' g · ' + it1(a.saltAdded) + ' aggiunto</div></div>';
   h += '<div class="card"><div class="small mut">Acqua</div><div class="num">' + it2(a.water) + ' L</div><div class="small mut">obiettivo ' + it1(T.water) + ' L</div></div></div>';
+  h += suppsMonitorHtml(c, plan, dt, log);
   // pasti
   const maxK = Math.max(1, ...a.slots.map(r => Math.max(r.q.kcal, r.real.kcal)));
   h += '<div class="card"><div class="row" style="margin-bottom:10px"><span class="b" style="font-size:15px">Pasto per pasto</span><span class="small mut right"><span style="display:inline-block;width:12px;height:8px;border-radius:2px;background:#D5DAD3"></span> quota · <span style="display:inline-block;width:12px;height:8px;border-radius:2px;background:var(--green)"></span> mangiato</span></div><div class="list">';
@@ -1031,9 +1470,11 @@ function planEditorHtml(c) {
   // tipi di giornata
   h += '<div class="tabs2">' + d.dayTypes.map((x, i) => '<button class="' + (i === S.dt ? 'on' : '') + '" onclick="S.dt=' + i + ';S.exEdit=null;render()">' + esc(x.name) + ' <span class="small" style="opacity:.75">· ' + (x.days.length ? x.days.map(w => WD[w]).join(' ') : 'nessun giorno') + '</span></button>').join('') + '<button class="btn ghost sm" onclick="dtAdd()">+ Tipo di giornata</button></div>';
   if (!dt) return h;
+  h += assistantHtml(c, d, dt);
   const T = dt.targets; const kcal = dtKcal(dt); const w = c.weight;
   h += '<div class="card stack" style="gap:10px"><div class="row"><input class="inp grow" value="' + esc(dt.name) + '" onchange="dte(\'name\',this.value)" aria-label="Nome del tipo di giornata">' + (d.dayTypes.length > 1 ? '<button class="btn sm danger" onclick="dtDel()">Elimina</button>' : '') + '</div>';
   h += '<div class="wrap">' + WD.map((n, i) => { const on = dt.days.includes(i); const used = !on && d.dayTypes.some((x, j) => j !== S.dt && x.days.includes(i)); return '<button class="btn sm' + (on ? ' p' : '') + '" style="min-width:48px' + (used ? ';opacity:.5' : '') + '" onclick="dtDay(' + i + ')">' + n + '</button>'; }).join('') + '</div>';
+  h += loadRowHtml(dt);
   h += '<h3 style="margin-top:4px">Obiettivi della giornata</h3><div class="gauto">';
   [['p', 'Proteine', 'g'], ['c', 'Carboidrati', 'g'], ['g', 'Grassi', 'g']].forEach(x => { h += '<div><label class="lab small" for="t_' + x[0] + '">' + x[1] + ' (g)</label><input class="inp n" id="t_' + x[0] + '" type="number" inputmode="decimal" value="' + T[x[0]] + '" onchange="tgt(\'' + x[0] + '\',this.value)"><div class="small mut" style="margin-top:3px">' + (w ? it1(T[x[0]] / w) + ' g/kg · ' : '') + r0(T[x[0]] * KCAL[x[0]]) + ' kcal</div></div>'; });
   h += '<div><div class="lab small">Calorie</div><div class="inp" style="background:var(--bg);border-color:var(--bg);text-align:right"><b>' + itK(kcal) + '</b></div><div class="small mut" style="margin-top:3px">P ' + r0(T.p * 4 / kcal * 100) + '% · C ' + r0(T.c * 4 / kcal * 100) + '% · G ' + r0(T.g * 9 / kcal * 100) + '%</div></div>';
@@ -1054,6 +1495,7 @@ function planEditorHtml(c) {
   });
   h += '<tr><td></td><td class="b">Totale</td><td></td><td class="n b">' + r0(tot.pct) + '%</td><td class="n b">' + itK(tot.kcal) + '</td><td class="n b">' + r0(tot.p) + '</td><td class="n b">' + r0(tot.c) + '</td><td class="n b">' + r0(tot.g) + '</td><td></td></tr></table></div>';
   h += '<div class="row"><button class="btn ghost sm" onclick="slotAdd()">+ Pasto</button><span class="small mut">«Personalizza» per scrivere i grammi di un pasto a mano invece che in percentuale.</span></div></div>';
+  h += checksHtml(c, d, dt);
   // esempi
   h += '<div class="card stack" style="gap:10px"><h3>Pasti d\'esempio</h3><div class="small mut">' + (d.mode === 'macro' ? 'Facoltativi: il cliente li segna con un tocco. L\'app controlla che rispettino la quota.' : 'Obbligatori: il primo esempio di ogni pasto è il piano che il cliente deve seguire.') + '</div>';
   dt.slots.forEach((s, i) => {
@@ -1077,6 +1519,7 @@ function planEditorHtml(c) {
     h += '<div style="margin-top:8px"><input class="inp" style="min-height:36px;padding:6px 8px" value="' + esc(s.note || '') + '" placeholder="Nota per il cliente su questo pasto (facoltativa)" onchange="slotE(' + i + ',\'note\',this.value)" aria-label="Nota pasto"></div></div>';
   });
   h += '</div>';
+  h += suppsEditorHtml(c, d) + costCardHtml(c, d);
   h += '<div class="card stack"><div><label class="lab" for="dtNote">Nota per i giorni «' + esc(dt.name) + '»</label><textarea class="inp" id="dtNote" rows="2" onchange="dte(\'note\',this.value)">' + esc(dt.note || '') + '</textarea></div><div><label class="lab" for="plNote">Nota generale per ' + esc(c.name.split(' ')[0]) + '</label><textarea class="inp" id="plNote" rows="3" onchange="pe(\'note\',this.value)">' + esc(d.note || '') + '</textarea></div></div>';
   return h;
 }
@@ -1129,7 +1572,7 @@ function foodListHtml(list, q) {
   return list.map(f => '<button class="food" style="width:100%;text-align:left;background:transparent;border-left:0;border-right:0;border-bottom:0" onclick="foodEditSheet(\'' + f.id + '\')"><div class="grow"><div class="b">' + esc(f.name) + (f.src === 'off' ? ' <span class="chip" style="font-size:10px;padding:2px 7px">etichetta</span>' : f.src === 'custom' ? ' <span class="chip" style="font-size:10px;padding:2px 7px">tuo</span>' : '') + '</div><div class="small mut">' + r0(f.kcal) + ' kcal · P ' + r1(f.p) + ' · C ' + r1(f.c) + ' · G ' + r1(f.g) + (f.salt ? ' · sale ' + r1(f.salt) : '') + '</div></div><span class="mut">›</span></button>').join('');
 }
 function foodEditSheet(id, presetName, ctx, preset) {
-  const f = id ? foodById(id) : Object.assign({ name: presetName || '', cat: 'altro', kcal: '', p: '', c: '', g: '', fib: '', salt: '', portions: [] }, preset || {});
+  const f = id ? foodById(id) : Object.assign({ name: presetName || '', cat: 'altro', kcal: '', p: '', c: '', g: '', fib: '', salt: '', price: '', pack: '', portions: [] }, preset || {});
   window._foodCtx = ctx || null; window._foodId = id || null; window._foodPreset = preset || null;
   const inp = (k, label, step) => '<div><label class="lab small" for="fe_' + k + '">' + label + '</label><input class="inp n" id="fe_' + k + '" type="number" inputmode="decimal" step="' + (step || 0.1) + '" value="' + (f[k] === '' || f[k] == null ? '' : f[k]) + '"></div>';
   const p0 = (f.portions || [])[0] || { name: '', g: '' };
@@ -1140,9 +1583,10 @@ function foodEditSheet(id, presetName, ctx, preset) {
     '<div class="g3">' + inp('kcal', 'kcal', 1) + inp('fib', 'Fibre g') + inp('salt', 'Sale g', 0.01) + '</div>' +
     '<button class="btn link" style="align-self:flex-start" onclick="feKcal()">Calcola le kcal dai macro</button>' +
     '<div class="small mut b">Porzione rapida (facoltativa)</div><div class="g2"><input class="inp" id="fe_pn" placeholder="es. fetta" value="' + esc(p0.name) + '"><input class="inp n" id="fe_pg" type="number" inputmode="decimal" placeholder="grammi" value="' + (p0.g || '') + '"></div>' +
+    '<div class="small mut b">Per la spesa (facoltativi)</div><div class="g2">' + inp('price', 'Prezzo € al kg', 0.1) + inp('pack', 'Confezione g (0 = sfuso)', 10) + '</div>' +
     '<div class="g2"><button class="btn" onclick="sheetClose()">Annulla</button><button class="btn p" onclick="foodSave()">Salva</button></div>' +
     (id && f.src !== 'base' ? '<button class="btn danger" onclick="foodDel()">Elimina alimento</button>' : '') + '</div>');
-  setTimeout(() => { const i = document.getElementById(f.name ? 'fe_p' : 'fe_name'); if (i) i.focus(); }, 50);
+  { const i = document.getElementById(f.name ? 'fe_p' : 'fe_name'); if (i) i.focus(); }
 }
 function feKcal() { const g = k => num(document.getElementById('fe_' + k).value); document.getElementById('fe_kcal').value = r0(kcalOfMacros({ p: g('p'), c: g('c'), g: g('g') })); }
 function foodSave() {
@@ -1150,7 +1594,7 @@ function foodSave() {
   const name = document.getElementById('fe_name').value.trim(); if (!name) { toast('Serve il nome'); return; }
   let f = window._foodId ? foodById(window._foodId) : null;
   if (!f) { f = { id: uid(), src: 'custom', portions: [] }; DB.foods.push(f); if (window._foodPreset) { f.src = 'off'; f.barcode = window._foodPreset.barcode; f.brand = window._foodPreset.brand; } }
-  Object.assign(f, { name, cat: document.getElementById('fe_cat').value, kcal: g('kcal') || r0(kcalOfMacros({ p: g('p'), c: g('c'), g: g('g') })), p: g('p'), c: g('c'), g: g('g'), fib: g('fib'), salt: g('salt') });
+  Object.assign(f, { name, cat: document.getElementById('fe_cat').value, kcal: g('kcal') || r0(kcalOfMacros({ p: g('p'), c: g('c'), g: g('g') })), p: g('p'), c: g('c'), g: g('g'), fib: g('fib'), salt: g('salt'), price: g('price') || null, pack: Math.max(0, g('pack')) });
   const pn = document.getElementById('fe_pn').value.trim(), pg = num(document.getElementById('fe_pg').value);
   f.portions = pn && pg > 0 ? [{ name: pn, g: pg }] : (f.portions || []).slice(1).length ? f.portions.slice(1) : [];
   persist(); sheetClose(); toast('Alimento salvato');
