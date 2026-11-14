@@ -23,6 +23,7 @@
   --r:14px; --sat:env(safe-area-inset-bottom,0px);
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.4;-webkit-text-size-adjust:100%}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
@@ -122,6 +123,12 @@ label.lab{display:block;font-weight:600;margin-bottom:6px}
 #toast.on{opacity:1}
 .notice{background:var(--warnsoft);color:var(--warn);border-radius:10px;padding:10px 12px;font-size:13px}
 .kv{display:flex;justify-content:space-between;gap:10px;padding:6px 0}
+.gate{max-width:440px;margin:12px auto 0}
+.spinbox{display:flex;flex-direction:column;align-items:center;gap:14px;padding:70px 0}
+.spin{width:34px;height:34px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--green);animation:spin 0.9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.spin{animation-duration:3s}}
+.inp:disabled{background:var(--bg);color:var(--mut)}
 .shoprow{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line2)}
 .cathead+.shoprow{border-top:0}
 .shoprow.done .nm{text-decoration:line-through;color:var(--mut)}
@@ -153,6 +160,10 @@ select.inp{appearance:auto}
 <div id="sheetbg" onclick="sheetClose()"></div>
 <div id="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div id="sheetBody"></div></div>
 <div id="toast" role="status"></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="config.js"></script>
 <script>
 // ===== DATABASE ALIMENTI DI BASE =====
 // Valori per 100 g di parte edibile (crudo salvo indicazione): kcal, proteine, carboidrati, grassi, fibre, sale (g).
@@ -361,7 +372,7 @@ const PRICES = {
   "Salsa di soia": [10, 150], "Ketchup": [4, 500], "Senape": [6, 200], "Aceto balsamico": [8, 500], "Pesto alla genovese": [13, 190]
 };
 // ===== NUCLEO =====
-const APP_VERSION = 2;
+const APP_VERSION = 3;
 const APP_NAME = 'Quota';           // nome provvisorio: cambialo qui
 const KEY = 'quota_db_v1';
 const KCAL = { p: 4, c: 4, g: 9 };
@@ -400,18 +411,9 @@ function initials(name) { return (name || '?').split(/\s+/).map(w => w[0] || '')
 function timeNow() { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
 function toMin(hhmm) { const p = (hhmm || '12:00').split(':').map(Number); return p[0] * 60 + (p[1] || 0); }
 
-// --- persistenza (locale; in v2 diventa Firestore per chiave) ---
-function persist() { try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) { toast('Spazio pieno: esporta i dati'); } }
-function load() {
-  try { const raw = localStorage.getItem(KEY); if (raw) DB = JSON.parse(raw); } catch (e) { DB = null; }
-  if (!DB) { DB = freshDB(); seedDemo(); }
-  migrate(); persist();
-  if (!DB.settings) DB.settings = {};
-  S.role = DB.settings.role || 'client';
-  S.date = todayISO();
-}
+// --- persistenza: vedi cloud.js (account e Firestore) ---
 function freshDB() {
-  return { v: APP_VERSION, settings: { role: 'client' }, foods: baseFoods(), clients: [], plans: {}, logs: {}, shop: {} };
+  return { v: APP_VERSION, foods: baseFoods(), clients: [], plans: {}, logs: {}, shop: {}, prices: {} };
 }
 function baseFoods() {
   return FOODS_BASE.map((f, i) => ({ id: 'b' + i, name: f[0], cat: f[1], kcal: f[2], p: f[3], c: f[4], g: f[5], fib: f[6], salt: f[7], portions: (f[8] || []).map(p => ({ name: p[0], g: p[1] })), src: 'base', price: PRICES[f[0]] ? PRICES[f[0]][0] : null, pack: PRICES[f[0]] ? PRICES[f[0]][1] : 0 }));
@@ -599,11 +601,7 @@ function daySummary(clientId, iso) {
 
 // --- clienti ---
 function clientById(id) { return DB.clients.find(c => c.id === id); }
-function selfClient() { return DB.clients.find(c => c.self); }
-function addClient(name, weight, self) {
-  const c = { id: uid(), name: name, weight: weight || null, self: !!self, createdAt: Date.now() };
-  DB.clients.push(c); persist(); return c;
-}
+function selfClient() { return ME && ME.role === 'client' ? (DB.clients[0] || null) : null; }
 
 // --- toast / foglio ---
 let _toastT = null;
@@ -616,9 +614,7 @@ function askConfirm(text, okLabel, fn) {
 }
 
 // --- dati demo ---
-function seedDemo() {
-  const me = addClient('Tu (questo telefono)', 78, true);
-  const demo = addClient('Marco B. (demo)', 78, false);
+function demoBuild(demo) {
   Object.assign(demo, { sex: 'm', age: 28, height: 180, bf: 14, laf: 1.75, athlete: false, goal: 'dim', rate: 0.75, pk: 2.2, gk: 0.9 });
   const f = n => { const x = DB.foods.find(z => z.name === n); if (!x) throw new Error('food ' + n); return x.id; };
   const plan = newPlan('Ricomposizione, fase 2');
@@ -643,10 +639,6 @@ function seedDemo() {
   plan.supps = [sCrea, sCaf];
   demo.adj = {}; demo.adj[rip.id] = -320;
   DB.plans[demo.id] = { draft: clone(plan), active: clone(plan) }; DB.plans[demo.id].active.status = 'sent'; DB.plans[demo.id].active.sentAt = Date.now() - 6e8;
-  const mine = clone(plan); const idMap = {};
-  mine.dayTypes.forEach(d => { const nid = uid(); idMap[d.id] = nid; d.id = nid; d.slots.forEach(s => { s.id = uid(); s.examples.forEach(e => e.id = uid()); }); });
-  mine.supps.forEach(sp => { sp.id = uid(); if (sp.dayTypes !== 'all') sp.dayTypes = sp.dayTypes.map(x => idMap[x]); });
-  DB.plans[me.id] = { draft: clone(mine), active: clone(mine) }; DB.plans[me.id].active.status = 'sent'; DB.plans[me.id].active.sentAt = Date.now() - 6e8;
   // 7 giorni di diario demo per Marco
   const seeds = [[1, 1, 1, 1, 1], [1, 0.9, 1.15, 1, 1.2], [1, 1, 1, 1, 0.95], [1, 1, 1, 1, 1], [1, 1, 0.9, 1, 1.05], [1.1, 1, 1.2, 1.3, 1], [1, 1.05, 0.85, 0, 0]];
   const waters = [3.1, 2.4, 2.9, 3.1, 3.0, 2.7, 1.25], salts = [1.2, 2.6, 1.3, 1.5, 1.2, 1.9, 0.8];
@@ -663,6 +655,11 @@ function seedDemo() {
       else log.meals[s.id] = { status: 'custom', items: s.examples[0].items.map(it => ({ foodId: it.foodId, qty: Math.round(it.qty * k) })), note: '', at: s.time };
     });
   }
+}
+function demoClientCreate() {
+  const demo = addClient('Marco B. (demo)', 78);
+  demoBuild(demo); _touch[demo.id] = 1; persist();
+  toast('Cliente di esempio creato'); render();
 }
 // ===== UI CONDIVISA =====
 const ICO = {
@@ -684,11 +681,12 @@ const TABS = {
 };
 
 function go(page, extra) { S.page = page; Object.assign(S, extra || {}); window.scrollTo(0, 0); render(); }
-function setRole(r) { S.role = r; DB.settings.role = r; persist(); S.page = r === 'client' ? 'oggi' : 'clienti'; S.clientId = null; render(); }
-
 function render() {
   document.getElementById('brand').textContent = APP_NAME;
-  document.getElementById('roleTag').textContent = S.role === 'client' ? 'Cliente' : 'Nutrizionista';
+  const tabsEl = document.getElementById('tabs'), rt = document.getElementById('roleTag');
+  if (BOOT.state !== 'ready') { rt.hidden = true; tabsEl.hidden = true; document.getElementById('main').innerHTML = gateHtml(); return; }
+  rt.hidden = false; tabsEl.hidden = false;
+  rt.textContent = (S.role === 'client' ? 'Cliente' : 'Nutrizionista') + (navigator.onLine === false ? ' · offline' : '');
   const tabs = TABS[S.role];
   const main = tabs.find(t => t[0] === (S.page === 'segna' ? 'oggi' : S.page === 'cliente' ? 'clienti' : S.page));
   document.getElementById('tabs').innerHTML = tabs.map(t => '<button class="' + (main && main[0] === t[0] ? 'on' : '') + '" onclick="go(\'' + t[0] + '\')" aria-label="' + t[1] + '">' + ICO[t[2]] + t[1] + '</button>').join('');
@@ -767,7 +765,7 @@ function daysStrip(clientId) {
 
 // ===== LATO CLIENTE =====
 function noPlanHtml() {
-  return '<div class="card stack"><h2>Nessun piano ancora</h2><div class="mut">Quando il nutrizionista ti invia il piano lo trovi qui. In questa versione di prova puoi crearlo tu stesso: Impostazioni → passa a Nutrizionista → cliente «Tu (questo telefono)».</div><button class="btn" onclick="go(\'set\')">Impostazioni</button></div>';
+  return '<div class="card stack"><h2>Nessun piano ancora</h2><div class="mut">Il tuo nutrizionista non ti ha ancora inviato il piano. Appena lo fa, lo trovi qui senza dover fare nulla.</div></div>';
 }
 function pageOggi() {
   const me = selfClient(); if (!me) return noPlanHtml();
@@ -776,7 +774,7 @@ function pageOggi() {
   const dt = dayTypeFor(plan, S.date, log);
   const a = dayAnalysis(plan, dt, log);
   const isToday = S.date === todayISO();
-  let h = '<div class="stack">';
+  let h = '<div class="stack">' + installTipHtml();
   h += '<div class="row" style="align-items:flex-end"><div><div class="small mut">' + fmtDate(S.date) + '</div><h1>' + (isToday ? 'Oggi' : fmtShort(S.date)) + '</h1></div><button class="chip dark right" style="border:0" onclick="pickDayType()">' + esc(dt.name) + ' ▾</button></div>';
   h += daysStrip(me.id);
   h += macroCard(a);
@@ -956,28 +954,7 @@ function pageProgressi() {
 }
 
 // --- impostazioni (entrambi i ruoli) ---
-function pageSettings() {
-  const me = selfClient();
-  let h = '<div class="stack"><h1>Impostazioni</h1>';
-  h += '<div class="card stack"><div class="b">Chi usa questo telefono</div><div class="seg"><button class="' + (S.role === 'client' ? 'on' : '') + '" onclick="setRole(\'client\')">Cliente</button><button class="' + (S.role === 'nutri' ? 'on' : '') + '" onclick="setRole(\'nutri\')">Nutrizionista</button></div><div class="small mut">In questa versione di prova i due ruoli convivono sullo stesso telefono. Con gli account (prossima versione) ognuno vedrà solo il suo.</div></div>';
-  if (me) h += '<div class="card stack"><div class="b">Il tuo profilo (cliente)</div><div class="g2"><div><label class="lab small" for="meName">Nome</label><input class="inp" id="meName" value="' + esc(me.name) + '" onchange="me_set(\'name\',this.value)"></div><div><label class="lab small" for="meW">Peso (kg)</label><input class="inp n" id="meW" type="number" inputmode="decimal" value="' + (me.weight || '') + '" onchange="me_set(\'weight\',num(this.value))"></div></div></div>';
-  h += '<div class="card stack"><div class="b">I tuoi dati</div><div class="small mut">Tutto resta su questo telefono. Esporta un file di sicurezza o per spostare i dati.</div><div class="g2"><button class="btn" onclick="exportJSON()">Esporta</button><button class="btn" onclick="importJSON()">Importa</button></div><button class="btn danger" onclick="askConfirm(\'Cancella tutti i dati e ricarica i dati demo?\',\'Sì, azzera\',resetAll)">Azzera e ricarica la demo</button></div>';
-  h += '<div class="card"><div class="b">Alimenti</div><div class="small mut" style="margin-top:4px">' + DB.foods.filter(f => f.src === 'base').length + ' alimenti di base con valori medi indicativi, ' + DB.foods.filter(f => f.src !== 'base').length + ' aggiunti. I prodotti confezionati arrivano da Open Food Facts tramite codice a barre. I prezzi per la spesa sono medie indicative: si correggono dalla lista o da Alimenti.</div></div>';
-  h += '<div class="card stack"><div class="b">Da dove vengono i numeri</div><div class="small mut">Fabbisogni, intervalli dei macronutrienti e schede degli integratori vengono da linee guida e position stand.</div><button class="btn" onclick="refsSheet()">Vedi le fonti</button></div>';
-  h += '<div class="small mut" style="text-align:center">' + APP_NAME + ' · versione di prova ' + APP_VERSION + '</div></div>';
-  return h;
-}
-function me_set(k, v) { const me = selfClient(); me[k] = v; persist(); toast('Salvato'); }
-function exportJSON() {
-  const blob = new Blob([JSON.stringify(DB, null, 1)], { type: 'application/json' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'quota-' + todayISO() + '.json'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
-}
-function importJSON() {
-  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'application/json,.json';
-  inp.onchange = () => { const f = inp.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { try { const d = JSON.parse(r.result); if (!d.foods || !d.clients) throw new Error('formato'); DB = d; persist(); load(); toast('Dati importati'); render(); } catch (e) { toast('File non valido'); } }; r.readAsText(f); };
-  inp.click();
-}
-function resetAll() { localStorage.removeItem(KEY); DB = null; load(); S.page = S.role === 'client' ? 'oggi' : 'clienti'; render(); toast('Dati demo ricaricati'); }
+// impostazioni, esportazione e profilo: vedi cloud.js
 // ===== BUILD 2: scheda cliente, assistente, controlli, integratori, spesa =====
 // I numeri di questa parte vengono da linee guida e position stand: vedi REFS in fondo e la ricerca allegata.
 const LAFS = [[1.45, 'Molto leggero, quasi fermo'], [1.6, 'Sedentario, attività leggera'], [1.75, 'Moderatamente attivo'], [2.1, 'Molto attivo'], [2.4, 'Allenamenti lunghi quasi ogni giorno']];
@@ -1124,7 +1101,7 @@ function loadRowHtml(dt) {
 // ---------- scheda cliente (Dati) ----------
 function clientProfileHtml(c) {
   const e = energyPlan(c);
-  let h = '<div class="card stack"><h3>Scheda cliente</h3><div class="g2"><div><label class="lab small" for="cName">Nome</label><input class="inp" id="cName" value="' + esc(c.name) + '" onchange="profSet(\'name\',this.value)"></div><div><div class="lab small">Sesso</div><div class="seg"><button class="' + (c.sex === 'm' ? 'on' : '') + '" onclick="profSet(\'sex\',\'m\')">Uomo</button><button class="' + (c.sex === 'f' ? 'on' : '') + '" onclick="profSet(\'sex\',\'f\')">Donna</button></div></div></div>';
+  let h = linkCardHtml(c) + '<div class="card stack"><h3>Scheda cliente</h3><div class="g2"><div><label class="lab small" for="cName">Nome</label><input class="inp" id="cName" value="' + esc(c.name) + '" onchange="profSet(\'name\',this.value)"></div><div><div class="lab small">Sesso</div><div class="seg"><button class="' + (c.sex === 'm' ? 'on' : '') + '" onclick="profSet(\'sex\',\'m\')">Uomo</button><button class="' + (c.sex === 'f' ? 'on' : '') + '" onclick="profSet(\'sex\',\'f\')">Donna</button></div></div></div>';
   h += '<div class="gauto">' + [['age', 'Età (anni)', 1], ['height', 'Altezza (cm)', 1], ['weight', 'Peso (kg)', 0.1], ['bf', 'Grasso corporeo (%)', 0.5]].map(x => '<div><label class="lab small" for="pf_' + x[0] + '">' + x[1] + '</label><input class="inp n" id="pf_' + x[0] + '" type="number" inputmode="decimal" step="' + x[2] + '" value="' + (c[x[0]] == null ? '' : c[x[0]]) + '" onchange="profSet(\'' + x[0] + '\',num(this.value)||null)"></div>').join('') + '</div>';
   h += '<div class="small mut">La percentuale di grasso è facoltativa: se c\'è, calcolo massa magra, proteine in deficit e disponibilità energetica.</div>';
   h += '<label class="row" style="padding:4px 0"><input type="checkbox" id="pf_ath" style="width:20px;height:20px;accent-color:var(--green)"' + (c.athlete ? ' checked' : '') + ' onchange="profSet(\'athlete\',this.checked)"><span>Atleta o sportivo agonista (uso equazioni e intervalli per sportivi)</span></label>';
@@ -1132,7 +1109,7 @@ function clientProfileHtml(c) {
   if (e) h += '<div class="hint">Metabolismo a riposo stimato ' + itK(e.rmr.val) + ' kcal (' + EQS[e.rmr.pick] + '), dispendio ' + itK(e.tdee) + ' kcal' + (e.rmr.ffm ? ', massa magra ' + it1(e.rmr.ffm) + ' kg' : '') + '. I dettagli e la proposta di macro sono nell\'assistente, scheda Piano.</div>';
   else h += '<div class="hint">Con sesso, età, altezza e peso l\'assistente del piano stima il fabbisogno.</div>';
   h += '<div class="small mut">Qui stanno solo i dati che servono ai calcoli. Patologie, farmaci ed esami arriveranno con gli account, dove si possono proteggere come dati sanitari.</div>';
-  h += (c.self ? '<div class="hint">Questo è il cliente collegato alla parte Cliente di questo telefono.</div>' : '<button class="btn danger" onclick="askConfirm(\'Eliminare ' + esc(c.name).replace(/'/g, '') + ' con piano e diario?\',\'Elimina\',deleteClient)">Elimina cliente</button>') + '</div>';
+  h += '<button class="btn danger" onclick="askConfirm(\'Eliminare ' + esc(c.name).replace(/'/g, '') + ' con piano e diario? Non si può annullare.\',\'Elimina\',deleteClient)">Elimina cliente</button></div>';
   return h;
 }
 function profSet(k, v) { const c = clientById(S.clientId); c[k] = v; persist(); render(); }
@@ -1323,7 +1300,8 @@ function shopItemSheet(id, qty) {
 }
 function shopItemSave() {
   const id = window._shopId; const f = foodById(id); const st = shopState(selfClient().id);
-  f.price = num(document.getElementById('sh_price').value) || null; f.pack = Math.max(0, num(document.getElementById('sh_pack').value));
+  const pr = num(document.getElementById('sh_price').value) || null, pk = Math.max(0, num(document.getElementById('sh_pack').value));
+  if (isMine(f)) { f.price = pr; f.pack = pk; } else { if (!DB.prices) DB.prices = {}; DB.prices[id] = { price: pr, pack: pk }; applyPrices(); }
   if (document.getElementById('sh_have').checked) st.have[id] = true; else delete st.have[id];
   persist(); sheetClose(); render();
 }
@@ -1355,17 +1333,471 @@ function costSheet() {
   sheetOpen(h + '</div><button class="btn wide" onclick="sheetClose()">Chiudi</button></div>');
 }
 
-// ---------- migrazione dati dalla build 1 ----------
-function migrate() {
-  if (!DB.shop) DB.shop = {};
-  DB.foods.forEach(f => { if (f.src === 'base' && PRICES[f.name]) { if (f.price === undefined) f.price = PRICES[f.name][0]; if (f.pack === undefined) f.pack = PRICES[f.name][1]; } if (f.pack === undefined) f.pack = 0; if (f.price === undefined) f.price = null; });
-  Object.keys(DB.plans || {}).forEach(cid => ['draft', 'active'].forEach(k => { const p = DB.plans[cid][k]; if (!p) return; if (!p.supps) p.supps = []; p.dayTypes.forEach(dt => { if (!dt.load) dt.load = /ripos/i.test(dt.name) ? 'riposo' : 'moderato'; if (dt.eee === undefined) dt.eee = null; }); }));
-  DB.clients.forEach(c => { if (c.laf === undefined) c.laf = 1.6; if (c.goal === undefined) c.goal = 'mant'; if (c.athlete === undefined) c.athlete = false; });
-  DB.v = 2;
+// ===== BUILD 3: account, ruoli e dati sul server (Firebase Auth + Firestore) =====
+// Chi si registra da solo è nutrizionista. Chi si registra con un codice invito è cliente di quel nutrizionista.
+// L'accesso ai dati non dipende dal ruolo scritto nel profilo ma da chi è proprietario di cosa: lo decidono le regole di Firestore.
+//
+// Struttura:
+//   users/{uid}                      profilo: role, name, email (+ clientId, nutriUid, nutriName per i clienti; prices per i nutrizionisti)
+//   invites/{codice}                 nutriUid, nutriName, clientId, clientName, usedBy
+//   clients/{cid}                    scheda cliente: nutriUid, clientUid, inviteCode, dati per i calcoli
+//   clients/{cid}/plans/draft|active piano in bozza (solo nutrizionista) e piano inviato (lo legge anche il cliente)
+//   clients/{cid}/logs/{giorno}      diario del cliente: pasti, acqua, sale, integratori
+//   clients/{cid}/private/shop       spesa del cliente e i suoi prezzi
+//   clients/{cid}/foods/{id}         alimenti creati dal cliente
+//   nutris/{uid}/foods/{id}          alimenti creati dal nutrizionista
+let AUTH = null, FS = null, ME = null;
+let BOOT = { state: 'init', msg: '' };   // init | nosdk | noconfig | out | loading | ready | noprofile | unlinked | error
+let _base = {}, _cf = {}, _unsub = [], _cUnsub = {}, _wait = {}, _fresh = {}, _touch = {}, _creating = {}, _retry = {};
+let _registering = false, _rerender = false;
+const LOG_DAYS = 60;
+const CODE_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const CLIENT_NO_WRITE = ['id', 'clientUid', 'joinedAt', 'claimCode', 'inviteCode', 'nutriUid', 'createdAt'];
+
+// ---------- utilità ----------
+function sortKeys(o) {
+  if (Array.isArray(o)) return o.map(x => x === undefined ? null : sortKeys(x));
+  if (o && typeof o === 'object') { const r = {}; Object.keys(o).sort().forEach(k => { if (o[k] !== undefined) r[k] = sortKeys(o[k]); }); return r; }
+  if (typeof o === 'number' && !isFinite(o)) return null;
+  return o === undefined ? null : o;
+}
+function stable(o) { return JSON.stringify(sortKeys(o)); }
+function cutoffISO() { return addDays(todayISO(), -LOG_DAYS); }
+function newCode() { const a = new Uint32Array(8); crypto.getRandomValues(a); let s = ''; for (let i = 0; i < 8; i++) s += CODE_ABC[a[i] % CODE_ABC.length]; return s; }
+function fmtCode(c) { return c ? c.slice(0, 4) + '-' + c.slice(4) : ''; }
+function normCode(s) { return (s || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+function inviteLink(code) { return location.origin + location.pathname + '?invito=' + code; }
+function val(id) { const e = document.getElementById(id); return e ? e.value : ''; }
+function myOwner() { return ME && ME.role === 'nutri' ? 'n' : 'c'; }
+function myFoodsPrefix() { return ME.role === 'nutri' ? 'nutris/' + ME.uid + '/foods' : 'clients/' + ME.clientId + '/foods'; }
+function foodData(f) { const o = {}; Object.keys(f).forEach(k => { if (k !== 'id' && k !== 'owner' && k[0] !== '_') o[k] = f[k]; }); return o; }
+function isMine(f) { return !!f && f.src !== 'base' && f.owner === myOwner(); }
+function cloudErr(e) { console.error('cloud', e && e.code, e && e.message); if (e && e.code === 'permission-denied') toast('Il server ha rifiutato il salvataggio'); }
+function errText(e) {
+  const c = (e && e.code) || '';
+  const bad = 'Email o password sbagliate.';
+  const M = {
+    'auth/email-already-in-use': 'Esiste già un account con questa email. Prova ad accedere.',
+    'auth/invalid-email': "L'email non sembra valida.",
+    'auth/weak-password': 'Password troppo corta: servono almeno 8 caratteri.',
+    'auth/invalid-credential': bad, 'auth/invalid-login-credentials': bad, 'auth/wrong-password': bad, 'auth/user-not-found': bad,
+    'auth/too-many-requests': 'Troppi tentativi. Aspetta qualche minuto e riprova.',
+    'auth/network-request-failed': 'Serve la connessione a internet.',
+    'auth/operation-not-allowed': "L'accesso con email e password non è ancora attivo nel progetto Firebase.",
+    'invite/not-found': 'Codice invito non trovato. Controlla di averlo scritto bene.',
+    'invite/used': 'Questo invito è già stato usato. Chiedi al tuo nutrizionista di mandartene uno nuovo.',
+    'permission-denied': "Il server ha rifiutato l'operazione.", 'unavailable': 'Serve la connessione a internet.'
+  };
+  return M[c] || 'Qualcosa non ha funzionato' + (c ? ' (' + c + ')' : '') + '. Riprova.';
+}
+
+// ---------- avvio ----------
+function boot() {
+  DB = freshDB(); S.date = todayISO();
+  S.auth = { mode: 'login', email: '', code: '', info: null };
+  const m = (location.search + location.hash).match(/invito=([A-Za-z0-9-]+)/);
+  let code = m ? normCode(m[1]) : '';
+  try { if (code) localStorage.setItem('quota_invito', code); else code = localStorage.getItem('quota_invito') || ''; } catch (e) { }
+  if (m) { try { history.replaceState(null, '', location.pathname); } catch (e) { } }
+  if (code) { S.auth.code = code; S.auth.mode = 'regClient'; }
+  const cfg = window.QUOTA_FIREBASE;
+  if (!window.firebase) { BOOT.state = 'nosdk'; render(); return; }
+  if (!cfg || !cfg.apiKey || /INCOLLA/i.test(cfg.apiKey)) { BOOT.state = 'noconfig'; render(); return; }
+  try { firebase.initializeApp(cfg); AUTH = firebase.auth(); FS = firebase.firestore(); } catch (e) { BOOT.state = 'error'; BOOT.msg = String((e && e.message) || e); render(); return; }
+  try { AUTH.languageCode = 'it'; } catch (e) { }
+  try { const p = FS.enablePersistence({ synchronizeTabs: true }); if (p && p.catch) p.catch(() => { }); } catch (e) { }
+  render();
+  AUTH.onAuthStateChanged(u => { if (u) onLogin(u); else onLogout(); });
+  if (code) inviteLookup();
+  window.addEventListener('online', () => { if (BOOT.state === 'ready') safeRender(); });
+  window.addEventListener('offline', () => { if (BOOT.state === 'ready') safeRender(); });
+  document.addEventListener('focusout', () => { if (_rerender) setTimeout(() => { if (_rerender) safeRender(); }, 200); });
+}
+function onLogout() { detachAll(); ME = null; DB = freshDB(); if (BOOT.state !== 'loading') { BOOT.state = 'out'; render(); } }
+async function onLogin(u) {
+  if (_registering) return;
+  BOOT.state = 'loading'; render();
+  try {
+    const snap = await FS.collection('users').doc(u.uid).get();
+    if (!snap.exists) { BOOT.state = 'noprofile'; render(); return; }
+    ME = Object.assign({ uid: u.uid, email: u.email }, snap.data());
+    try { localStorage.removeItem('quota_invito'); } catch (e) { }
+    startSession();
+  } catch (e) { BOOT.state = 'error'; BOOT.msg = errText(e); render(); }
+}
+function startSession() {
+  detachAll(); DB = freshDB(); _base = {}; _cf = {}; _touch = {};
+  S.role = ME.role; S.page = ME.role === 'client' ? 'oggi' : 'clienti'; S.date = todayISO(); S.clientId = null; S.edit = null;
+  DB.prices = ME.role === 'nutri' ? clone(ME.prices || {}) : {};
+  _base['@prices'] = stable(DB.prices);
+  BOOT.state = 'loading'; render();
+  if (ME.role === 'nutri') startNutri(); else startClient();
+  setTimeout(() => { if (BOOT.state === 'loading') { _wait = {}; BOOT.state = 'ready'; render(); } }, 15000);
+}
+
+// ---------- listener ----------
+function waitDone(k) { delete _wait[k]; if (BOOT.state === 'loading' && !Object.keys(_wait).length) { BOOT.state = 'ready'; render(); } }
+function listen(ref, key, onSnap, bucket) {
+  _wait[key] = 1;
+  const un = ref.onSnapshot(snap => {
+    let ch = false; try { ch = onSnap(snap); } catch (e) { console.error('snapshot', key, e); }
+    const was = BOOT.state; waitDone(key);
+    if (ch && was === 'ready') safeRender();
+  }, err => { console.error('listen', key, err && err.code); waitDone(key); onListenError(key, err); });
+  (bucket || _unsub).push(un);
+}
+function detachAll() {
+  _unsub.forEach(u => { try { u(); } catch (e) { } }); _unsub = [];
+  Object.keys(_cUnsub).forEach(detachClient); _wait = {};
+}
+function detachClient(cid) { (_cUnsub[cid] || []).forEach(u => { try { u(); } catch (e) { } }); delete _cUnsub[cid]; }
+function onListenError(key, err) {
+  if (!err || err.code !== 'permission-denied' || !ME) return;
+  if (ME.role === 'client') { if (BOOT.state !== 'unlinked') { detachAll(); BOOT.state = 'unlinked'; render(); } return; }
+  const m = key.match(/^(plans|logs|cfoods):(.+)$/);
+  if (m) { const cid = m[2]; _retry[cid] = (_retry[cid] || 0) + 1; if (_retry[cid] <= 9) { detachClient(cid); setTimeout(() => { if (ME && clientById(cid)) attachClient(cid); }, 3000); } }
+}
+function safeRender() {
+  if (BOOT.state !== 'ready') return;
+  const a = document.activeElement, main = document.getElementById('main');
+  if (a && main.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && a.type !== 'checkbox') { _rerender = true; return; }
+  _rerender = false; render();
+}
+function applyDoc(path, snap, setFn, delFn) {
+  const js = snap.exists ? stable(snap.data()) : null;
+  if ((_base[path] || null) === js) return false;
+  if (js === null) { delete _base[path]; delFn(); } else { _base[path] = js; setFn(JSON.parse(js)); }
+  return true;
+}
+function applyColl(prefix, snap, setFn, delFn, inRange) {
+  let ch = false; const seen = {};
+  snap.docs.forEach(d => { seen[d.id] = 1; const p = prefix + '/' + d.id; const js = stable(d.data()); if (_base[p] !== js) { _base[p] = js; setFn(d.id, JSON.parse(js)); ch = true; } });
+  Object.keys(_base).forEach(p => {
+    if (p.lastIndexOf(prefix + '/', 0) !== 0) return; const id = p.slice(prefix.length + 1);
+    if (id.indexOf('/') >= 0 || seen[id] || (inRange && !inRange(id))) return;
+    delete _base[p]; delFn(id); ch = true;
+  });
+  return ch;
+}
+function applyFoods(prefix, snap, owner) {
+  let ch = false; const seen = {};
+  snap.docs.forEach(d => {
+    seen[d.id] = 1; const p = prefix + '/' + d.id; const js = stable(d.data());
+    if (_base[p] === js) return;
+    _base[p] = js; const f = Object.assign(JSON.parse(js), { id: d.id, owner: owner, _path: p });
+    const i = DB.foods.findIndex(x => x.id === d.id); if (i >= 0) DB.foods[i] = f; else DB.foods.push(f); ch = true;
+  });
+  DB.foods = DB.foods.filter(f => {
+    if (!f._path || f._path.lastIndexOf(prefix + '/', 0) !== 0 || seen[f.id] || !_base[f._path]) return true;
+    if (f._t && Date.now() - f._t < 10000) return true;
+    delete _base[f._path]; ch = true; return false;
+  });
+  if (ch) applyPrices();
+  return ch;
+}
+function applyPrices() {
+  const pr = DB.prices || {};
+  DB.foods.forEach(f => {
+    let d;
+    if (f.src === 'base') d = PRICES[f.name] ? { price: PRICES[f.name][0], pack: PRICES[f.name][1] } : { price: null, pack: 0 };
+    else if (f._path && _base[f._path]) { const b = JSON.parse(_base[f._path]); d = { price: b.price == null ? null : b.price, pack: b.pack || 0 }; }
+    else d = { price: f.price == null ? null : f.price, pack: f.pack || 0 };
+    const o = pr[f.id]; f.price = o ? (o.price == null ? null : o.price) : d.price; f.pack = o ? (o.pack || 0) : d.pack;
+  });
+}
+function normPlan(p) {
+  if (!p.supps) p.supps = [];
+  (p.dayTypes || []).forEach(dt => { if (!dt.load) dt.load = /ripos/i.test(dt.name) ? 'riposo' : 'moderato'; if (dt.eee === undefined) dt.eee = null; (dt.slots || []).forEach(s => { if (!s.examples) s.examples = []; }); });
+  return p;
+}
+function setClientObj(id, data) {
+  const obj = Object.assign({ id: id }, data); const cur = clientById(id);
+  if (cur) { Object.keys(cur).forEach(k => delete cur[k]); Object.assign(cur, obj); } else DB.clients.push(obj);
+}
+
+// ---------- nutrizionista ----------
+function startNutri() {
+  listen(FS.collection('clients').where('nutriUid', '==', ME.uid), 'clients', snap => {
+    let ch = false; const seen = {};
+    snap.docs.forEach(d => {
+      seen[d.id] = 1; const p = 'clients/' + d.id; const js = stable(d.data());
+      if (_base[p] !== js) { _base[p] = js; _cf[d.id] = JSON.parse(js); setClientObj(d.id, JSON.parse(js)); ch = true; }
+      if (!_creating[d.id]) attachClient(d.id);
+    });
+    DB.clients.slice().forEach(c => {
+      if (seen[c.id] || !_base['clients/' + c.id] || (_fresh[c.id] && Date.now() - _fresh[c.id] < 10000)) return;
+      dropClientLocal(c.id); ch = true;
+    });
+    return ch;
+  });
+  listen(FS.collection('nutris').doc(ME.uid).collection('foods'), 'nfoods', snap => applyFoods('nutris/' + ME.uid + '/foods', snap, 'n'));
+}
+function attachClient(cid) {
+  if (_cUnsub[cid]) return; const b = _cUnsub[cid] = []; const ref = FS.collection('clients').doc(cid), pre = 'clients/' + cid;
+  if (!DB.plans[cid]) DB.plans[cid] = { draft: null, active: null };
+  listen(ref.collection('plans'), 'plans:' + cid, snap => applyColl(pre + '/plans', snap, (id, data) => { DB.plans[cid][id] = normPlan(data); }, id => { if (DB.plans[cid]) DB.plans[cid][id] = null; }), b);
+  listen(ref.collection('logs').where('date', '>=', cutoffISO()), 'logs:' + cid, snap => applyColl(pre + '/logs', snap, (id, data) => { if (!DB.logs[cid]) DB.logs[cid] = {}; DB.logs[cid][id] = data; }, id => { if (DB.logs[cid]) delete DB.logs[cid][id]; }, id => id >= cutoffISO()), b);
+  listen(ref.collection('foods'), 'cfoods:' + cid, snap => applyFoods(pre + '/foods', snap, 'c'), b);
+}
+function dropClientLocal(cid) {
+  detachClient(cid); DB.clients = DB.clients.filter(c => c.id !== cid); delete DB.plans[cid]; delete DB.logs[cid]; delete _cf[cid];
+  Object.keys(_base).forEach(p => { if (p === 'clients/' + cid || p.lastIndexOf('clients/' + cid + '/', 0) === 0) delete _base[p]; });
+  DB.foods = DB.foods.filter(f => !(f._path && f._path.lastIndexOf('clients/' + cid + '/', 0) === 0));
+  if (S.clientId === cid) { S.clientId = null; if (S.page === 'cliente') S.page = 'clienti'; }
+}
+function addClient(name, weight) {
+  const ref = FS.collection('clients').doc(), code = newCode(), id = ref.id;
+  const data = { name: name, weight: weight || null, nutriUid: ME.uid, clientUid: null, inviteCode: code, createdAt: Date.now(), laf: 1.6, goal: 'mant', athlete: false };
+  DB.clients.push(Object.assign({ id: id }, clone(data)));
+  DB.plans[id] = { draft: null, active: null };
+  _cf[id] = clone(data); _base['clients/' + id] = stable(data); _fresh[id] = Date.now(); _creating[id] = 1;
+  const b = FS.batch();
+  b.set(ref, data);
+  b.set(FS.collection('invites').doc(code), { nutriUid: ME.uid, nutriName: ME.name || '', clientId: id, clientName: name, createdAt: Date.now(), usedBy: null });
+  b.commit().then(() => { delete _creating[id]; if (ME && clientById(id)) attachClient(id); }).catch(e => { delete _creating[id]; cloudErr(e); });
+  return clientById(id);
+}
+function unlinkClient(cid) {
+  const c = clientById(cid); if (!c) return; const old = c.inviteCode, code = newCode();
+  const data = { clientUid: null, joinedAt: null, claimCode: null, inviteCode: code };
+  Object.assign(c, data); _cf[cid] = Object.assign(_cf[cid] || {}, data); _base['clients/' + cid] = stable(_cf[cid]);
+  const b = FS.batch();
+  b.update(FS.collection('clients').doc(cid), data);
+  b.set(FS.collection('invites').doc(code), { nutriUid: ME.uid, nutriName: ME.name || '', clientId: cid, clientName: c.name, createdAt: Date.now(), usedBy: null });
+  if (old) b.delete(FS.collection('invites').doc(old));
+  b.commit().catch(cloudErr);
+  toast('Collegamento tolto: nuovo invito pronto'); render();
+}
+async function cloudDeleteClient(cid) {
+  const c = clientById(cid); if (!c) return; const code = c.inviteCode; dropClientLocal(cid); render();
+  const ref = FS.collection('clients').doc(cid);
+  try {
+    for (const sub of ['plans', 'logs', 'foods', 'private']) {
+      const s = await ref.collection(sub).get(); const docs = s.docs.slice();
+      while (docs.length) { const b = FS.batch(); docs.splice(0, 400).forEach(d => b.delete(d.ref)); await b.commit(); }
+    }
+    if (code) await FS.collection('invites').doc(code).delete();
+    await ref.delete();
+  } catch (e) { cloudErr(e); }
+}
+
+// ---------- cliente ----------
+function startClient() {
+  const cid = ME.clientId; if (!cid) { BOOT.state = 'unlinked'; render(); return; }
+  const ref = FS.collection('clients').doc(cid), pre = 'clients/' + cid; DB.plans[cid] = { draft: null, active: null };
+  listen(ref, 'client', snap => {
+    if (!snap.exists) { onListenError('client', { code: 'permission-denied' }); return false; }
+    return applyDoc(pre, snap, data => { _cf[cid] = clone(data); setClientObj(cid, data); }, () => { });
+  });
+  listen(ref.collection('plans').doc('active'), 'plan', snap => applyDoc(pre + '/plans/active', snap, data => {
+    const old = DB.plans[cid].active; DB.plans[cid].active = normPlan(data);
+    if (old && old.sentAt !== data.sentAt && BOOT.state === 'ready') toast('Il tuo nutrizionista ha aggiornato il piano');
+  }, () => { DB.plans[cid].active = null; }));
+  listen(ref.collection('logs').where('date', '>=', cutoffISO()), 'logs', snap => applyColl(pre + '/logs', snap, (id, data) => { if (!DB.logs[cid]) DB.logs[cid] = {}; DB.logs[cid][id] = data; }, id => { if (DB.logs[cid]) delete DB.logs[cid][id]; }, id => id >= cutoffISO()));
+  listen(ref.collection('private').doc('shop'), 'shop', snap => applyDoc(pre + '/private/shop', snap, data => {
+    DB.prices = data.prices || {}; const st = clone(data); delete st.prices; if (!DB.shop) DB.shop = {}; DB.shop[cid] = st; applyPrices();
+  }, () => { if (DB.shop) delete DB.shop[cid]; }));
+  listen(ref.collection('foods'), 'cfoods', snap => applyFoods(pre + '/foods', snap, 'c'));
+  if (ME.nutriUid) listen(FS.collection('nutris').doc(ME.nutriUid).collection('foods'), 'nfoods', snap => applyFoods('nutris/' + ME.nutriUid + '/foods', snap, 'n'));
+}
+
+// ---------- salvataggio: scrive solo i documenti cambiati ----------
+function cloudDocs() {
+  const docs = {};
+  if (ME.role === 'nutri') {
+    const ids = {}; if (S.clientId) ids[S.clientId] = 1; Object.keys(_touch).forEach(k => { ids[k] = 1; });
+    Object.keys(ids).forEach(cid => {
+      const c = clientById(cid); if (!c) return; const p = DB.plans[cid];
+      if (p && p.draft) docs['clients/' + cid + '/plans/draft'] = p.draft;
+      if (p && p.active) docs['clients/' + cid + '/plans/active'] = p.active;
+      if (_touch[cid] && !c.clientUid && DB.logs[cid]) Object.keys(DB.logs[cid]).forEach(iso => { docs['clients/' + cid + '/logs/' + iso] = Object.assign({}, DB.logs[cid][iso], { date: iso }); });
+    });
+  } else {
+    const cid = ME.clientId, L = DB.logs[cid] || {};
+    Object.keys(L).forEach(iso => { docs['clients/' + cid + '/logs/' + iso] = Object.assign({}, L[iso], { date: iso }); });
+    if (DB.shop && DB.shop[cid]) docs['clients/' + cid + '/private/shop'] = Object.assign({}, DB.shop[cid], { prices: DB.prices || {} });
+  }
+  DB.foods.forEach(f => { if (isMine(f) && f._path) docs[f._path] = foodData(f); });
+  return docs;
+}
+function clientFieldDiff(c) {
+  const base = _cf[c.id]; if (!base) return null; const out = {}; let n = 0;
+  const keys = ME.role === 'nutri' ? Object.keys(c).filter(k => CLIENT_NO_WRITE.indexOf(k) < 0) : ['weight'];
+  keys.forEach(k => { const v = c[k] === undefined ? null : c[k]; if (stable(v) !== stable(base[k])) { out[k] = clone(v); n++; } });
+  return n ? out : null;
+}
+function persist() {
+  if (BOOT.state !== 'ready' || !ME || !FS) return;
+  try {
+    const docs = cloudDocs();
+    Object.keys(docs).forEach(p => { const js = stable(docs[p]); if (_base[p] !== js) { _base[p] = js; FS.doc(p).set(JSON.parse(js)).catch(cloudErr); } });
+    const fp = myFoodsPrefix() + '/';
+    Object.keys(_base).forEach(p => { if (p.lastIndexOf(fp, 0) === 0 && !docs[p]) { delete _base[p]; FS.doc(p).delete().catch(cloudErr); } });
+    DB.clients.forEach(c => {
+      const d = clientFieldDiff(c); if (!d) return;
+      Object.assign(_cf[c.id], clone(d)); _base['clients/' + c.id] = stable(_cf[c.id]);
+      FS.collection('clients').doc(c.id).update(d).catch(cloudErr);
+    });
+    if (ME.role === 'nutri') { const js = stable(DB.prices || {}); if (_base['@prices'] !== js) { _base['@prices'] = js; FS.collection('users').doc(ME.uid).update({ prices: JSON.parse(js) }).catch(cloudErr); } }
+  } catch (e) { console.error('persist', e); }
+}
+
+// ---------- accesso e registrazione ----------
+function authBusy(b, label) { const g = document.getElementById('au_go'); if (!g) return; g.disabled = !!b; if (b) { g.dataset.t = g.textContent; g.textContent = label || 'Un momento…'; } else if (g.dataset.t) g.textContent = g.dataset.t; }
+function authErr(msg) { const e = document.getElementById('au_err'); if (!e) return false; e.textContent = msg || ''; e.hidden = !msg; return false; }
+function authMode(m) { const em = val('au_email'); if (em) S.auth.email = em; S.auth.mode = m; render(); if (m === 'regClient') inviteLookup(); }
+async function doLogin() {
+  const email = val('au_email').trim(), pw = val('au_pw'); authErr('');
+  if (!email || !pw) return authErr('Scrivi email e password.');
+  authBusy(true, 'Accedo…');
+  try { await AUTH.signInWithEmailAndPassword(email, pw); } catch (e) { authBusy(false); authErr(errText(e)); }
+}
+async function doReset() {
+  const email = val('au_email').trim(); authErr('');
+  if (!email) return authErr("Scrivi l'email del tuo account.");
+  authBusy(true, 'Invio…');
+  try { await AUTH.sendPasswordResetEmail(email); } catch (e) { if (e && (e.code === 'auth/invalid-email' || e.code === 'auth/network-request-failed')) { authBusy(false); return authErr(errText(e)); } }
+  authBusy(false); const ok = document.getElementById('au_ok'); if (ok) { ok.hidden = false; ok.textContent = 'Se esiste un account con questa email, è partito un messaggio con il link per scegliere una nuova password. Controlla anche lo spam.'; }
+}
+async function claimInvite(user, code, name) {
+  const inv = await FS.collection('invites').doc(code).get();
+  if (!inv.exists) throw { code: 'invite/not-found' };
+  const d = inv.data(); if (d.usedBy && d.usedBy !== user.uid) throw { code: 'invite/used' };
+  const b = FS.batch();
+  if (!d.usedBy) {
+    b.update(FS.collection('clients').doc(d.clientId), { clientUid: user.uid, joinedAt: Date.now(), claimCode: code });
+    b.update(FS.collection('invites').doc(code), { usedBy: user.uid, usedAt: Date.now() });
+  }
+  b.set(FS.collection('users').doc(user.uid), { role: 'client', name: name || d.clientName || '', email: user.email || '', clientId: d.clientId, nutriUid: d.nutriUid, nutriName: d.nutriName || '', createdAt: Date.now() }, { merge: true });
+  await b.commit();
+}
+async function doRegister(kind) {
+  const name = val('au_name').trim(), email = val('au_email').trim(), pw = val('au_pw'), code = normCode(val('au_code')); authErr('');
+  if (kind === 'client' && code.length !== 8) return authErr('Il codice invito ha 8 caratteri: lo trovi nel messaggio del tuo nutrizionista.');
+  if (!name) return authErr('Scrivi il tuo nome.');
+  if (!email) return authErr('Scrivi la tua email.');
+  if (pw.length < 8) return authErr('La password deve avere almeno 8 caratteri.');
+  authBusy(true, 'Creo il tuo account…'); _registering = true; let user = null;
+  try {
+    if (kind === 'client') { const inv = await FS.collection('invites').doc(code).get(); if (!inv.exists) throw { code: 'invite/not-found' }; if (inv.data().usedBy) throw { code: 'invite/used' }; }
+    const cred = await AUTH.createUserWithEmailAndPassword(email, pw); user = cred.user;
+    try { await user.updateProfile({ displayName: name }); } catch (e) { }
+    if (kind === 'nutri') await FS.collection('users').doc(user.uid).set({ role: 'nutri', name: name, email: email, createdAt: Date.now(), prices: {} });
+    else await claimInvite(user, code, name);
+    _registering = false; await onLogin(user);
+  } catch (e) {
+    _registering = false;
+    if (user) { BOOT.state = 'noprofile'; BOOT.msg = errText(e); render(); return; }
+    authBusy(false); authErr(errText(e));
+  }
+}
+async function doCompleteProfile(kind) {
+  const u = AUTH.currentUser; if (!u) return; const name = val('au_name').trim() || u.displayName || '', code = normCode(val('au_code')); authErr('');
+  if (!name) return authErr('Scrivi il tuo nome.');
+  if (kind === 'client' && code.length !== 8) return authErr('Scrivi il codice invito di 8 caratteri.');
+  authBusy(true);
+  try {
+    if (kind === 'nutri') await FS.collection('users').doc(u.uid).set({ role: 'nutri', name: name, email: u.email || '', createdAt: Date.now(), prices: {} });
+    else await claimInvite(u, code, name);
+    await onLogin(u);
+  } catch (e) { authBusy(false); authErr(errText(e)); }
+}
+async function doRelink() {
+  const u = AUTH.currentUser, code = normCode(val('au_code')); authErr('');
+  if (code.length !== 8) return authErr('Scrivi il codice invito di 8 caratteri.');
+  authBusy(true);
+  try { await claimInvite(u, code, (ME && ME.name) || u.displayName || ''); await onLogin(u); } catch (e) { authBusy(false); authErr(errText(e)); }
+}
+async function doLogout() {
+  sheetClose(); detachAll(); BOOT.state = 'loading'; render();
+  try { if (navigator.onLine && FS.waitForPendingWrites) await Promise.race([FS.waitForPendingWrites(), new Promise(r => setTimeout(r, 4000))]); } catch (e) { }
+  try { await AUTH.signOut(); } catch (e) { }
+  try { await FS.terminate(); await FS.clearPersistence(); } catch (e) { }
+  location.reload();
+}
+function inviteInfoHtml() {
+  const code = normCode(S.auth.code), i = S.auth.info;
+  if (code.length !== 8) return '<div class="hint">Il codice invito ha 8 caratteri: è nel messaggio che ti ha mandato il tuo nutrizionista.</div>';
+  if (!i) return '<div class="hint">Controllo il codice…</div>';
+  if (i.missing) return '<div class="hint warn">Codice non trovato. Controlla di averlo scritto bene.</div>';
+  if (i.usedBy) return '<div class="hint warn">Questo invito è già stato usato. Se l\'account è tuo, accedi con la tua email; altrimenti chiedi un nuovo invito.</div>';
+  return '<div class="hint ok">Invito di ' + esc(i.nutriName || 'un nutrizionista') + ' per ' + esc(i.clientName || 'te') + '.</div>';
+}
+function inviteLookup() {
+  const code = normCode(S.auth.code); S.auth.info = null; const paint = () => { const b = document.getElementById('invInfo'); if (b) b.innerHTML = inviteInfoHtml(); };
+  paint(); if (code.length !== 8 || !FS) return;
+  FS.collection('invites').doc(code).get().then(s => {
+    if (normCode(S.auth.code) !== code) return; S.auth.info = s.exists ? s.data() : { missing: true }; paint();
+    const n = document.getElementById('au_name'); if (n && !n.value && s.exists && !s.data().usedBy) n.value = s.data().clientName || '';
+  }).catch(() => { S.auth.info = { missing: true }; paint(); });
+}
+function authField(id, label, type, ac, v, extra) { return '<div><label class="lab" for="' + id + '">' + label + '</label><input class="inp" id="' + id + '" type="' + type + '" autocomplete="' + ac + '" value="' + esc(v || '') + '"' + (extra || '') + '></div>'; }
+function gateHtml() {
+  const s = BOOT.state, a = S.auth || { mode: 'login' };
+  const wrap = x => '<div class="gate stack">' + x + '</div>';
+  const errBox = '<div class="notice" id="au_err" role="alert" hidden></div>';
+  if (s === 'init' || s === 'loading') return wrap('<div class="spinbox"><div class="spin" aria-hidden="true"></div><div class="mut">' + (s === 'loading' ? 'Carico i tuoi dati…' : 'Avvio…') + '</div></div>');
+  if (s === 'nosdk') return wrap('<div class="card stack"><h2>Serve la connessione</h2><div class="mut">Per il primo avvio l\'app deve scaricare alcuni componenti. Collegati a internet e riprova.</div><button class="btn p" onclick="location.reload()">Riprova</button></div>');
+  if (s === 'noconfig') return wrap('<div class="card stack"><h2>Manca il collegamento a Firebase</h2><div class="mut">L\'app è installata ma non sa ancora a quale progetto Firebase collegarsi. Apri il file <b>config.js</b>, incolla la configurazione del progetto e ricaricalo nel repo. I passi sono nel LEGGIMI.</div></div>');
+  if (s === 'error') return wrap('<div class="card stack"><h2>Non riesco a caricare i dati</h2><div class="mut">' + esc(BOOT.msg || '') + '</div><div class="g2"><button class="btn p" onclick="location.reload()">Riprova</button><button class="btn" onclick="doLogout()">Esci</button></div></div>');
+  if (s === 'noprofile') return wrap('<div><h1>Ancora un passo</h1><div class="mut">Il tuo account esiste ma la registrazione non è stata completata.' + (BOOT.msg ? ' ' + esc(BOOT.msg) : '') + '</div></div><div class="card stack">' + authField('au_name', 'Il tuo nome', 'text', 'name', (AUTH.currentUser && AUTH.currentUser.displayName) || '') + authField('au_code', 'Codice invito (se sei un cliente)', 'text', 'off', fmtCode(normCode(a.code)), ' autocapitalize="characters" spellcheck="false"') + errBox + '<button class="btn p wide" id="au_go" onclick="doCompleteProfile(\'client\')">Continua come cliente</button><button class="btn" onclick="doCompleteProfile(\'nutri\')">Sono un nutrizionista</button><button class="btn link" onclick="doLogout()">Esci</button></div>');
+  if (s === 'unlinked') return wrap('<div><h1>Collegamento non attivo</h1><div class="mut">Il tuo account non è più collegato a un nutrizionista. Se te ne ha mandato uno nuovo, scrivi qui il codice invito.</div></div><div class="card stack">' + authField('au_code', 'Codice invito', 'text', 'off', '', ' autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX"') + errBox + '<button class="btn p wide" id="au_go" onclick="doRelink()">Collega</button><button class="btn link" onclick="doLogout()">Esci</button></div>');
+  // non autenticato
+  if (a.mode === 'regNutri') return wrap('<div><h1>Account nutrizionista</h1><div class="mut">Crei i piani, inviti i clienti e segui ogni giorno come va.</div></div><form class="card stack" onsubmit="event.preventDefault();doRegister(\'nutri\')">' + authField('au_name', 'Nome e cognome', 'text', 'name', '', ' placeholder="es. Dott.ssa Elena Neri"') + authField('au_email', 'Email', 'email', 'username', a.email) + authField('au_pw', 'Password (almeno 8 caratteri)', 'password', 'new-password', '') + errBox + '<button class="btn p wide" id="au_go" type="submit">Crea l\'account</button></form><div class="hint">Sei un cliente? Non registrarti qui: usa il link o il codice che ti ha mandato il tuo nutrizionista.</div><button class="btn link" onclick="authMode(\'regClient\')">Ho un codice invito</button><button class="btn link" onclick="authMode(\'login\')">Ho già un account</button>');
+  if (a.mode === 'regClient') return wrap('<div><h1>Crea il tuo account</h1><div class="mut">Per vedere il piano che ti ha preparato il tuo nutrizionista.</div></div><form class="card stack" onsubmit="event.preventDefault();doRegister(\'client\')">' + authField('au_code', 'Codice invito', 'text', 'off', fmtCode(normCode(a.code)), ' autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX" oninput="S.auth.code=this.value;inviteLookup()"') + '<div id="invInfo">' + inviteInfoHtml() + '</div>' + authField('au_name', 'Il tuo nome', 'text', 'name', a.info && !a.info.missing && !a.info.usedBy ? a.info.clientName : '') + authField('au_email', 'Email', 'email', 'username', a.email) + authField('au_pw', 'Scegli una password (almeno 8 caratteri)', 'password', 'new-password', '') + errBox + '<button class="btn p wide" id="au_go" type="submit">Crea l\'account</button></form><button class="btn link" onclick="authMode(\'login\')">Ho già un account</button>');
+  if (a.mode === 'reset') return wrap('<div><h1>Nuova password</h1><div class="mut">Ti mando un link per sceglierne una nuova.</div></div><form class="card stack" onsubmit="event.preventDefault();doReset()">' + authField('au_email', 'Email del tuo account', 'email', 'username', a.email) + errBox + '<div class="hint ok" id="au_ok" hidden></div><button class="btn p wide" id="au_go" type="submit">Invia il link</button></form><button class="btn link" onclick="authMode(\'login\')">Torna all\'accesso</button>');
+  return wrap('<div><h1>Accedi</h1><div class="mut">Il piano nutrizionale, tra nutrizionista e cliente.</div></div><form class="card stack" onsubmit="event.preventDefault();doLogin()">' + authField('au_email', 'Email', 'email', 'username', a.email) + authField('au_pw', 'Password', 'password', 'current-password', '') + errBox + '<button class="btn p wide" id="au_go" type="submit">Accedi</button><button class="btn link" type="button" onclick="authMode(\'reset\')">Password dimenticata?</button></form><div class="card stack"><div class="b">Non hai ancora un account?</div><button class="btn" id="goRegClient" onclick="authMode(\'regClient\')">Ho un invito dal mio nutrizionista</button><button class="btn" id="goRegNutri" onclick="authMode(\'regNutri\')">Sono un nutrizionista</button></div>');
+}
+
+// ---------- inviti (lato nutrizionista) ----------
+function inviteMsg(c) {
+  return 'Ciao ' + c.name.split(' ')[0] + ', ti ho preparato il piano alimentare su ' + APP_NAME + '.\nApri questo link e crea il tuo account:\n' + inviteLink(c.inviteCode) + '\n\nSe l\'app ti chiede un codice invito: ' + fmtCode(c.inviteCode) + '\nPoi aggiungila alla schermata Home e accedi con la stessa email e password.';
+}
+function inviteSheet(cid) {
+  const c = clientById(cid); if (!c) return; const first = esc(c.name.split(' ')[0]);
+  sheetOpen('<div class="stack"><h2>Invita ' + first + '</h2><div class="small mut">Aprendo il link ' + first + ' crea il suo account e viene collegato a te. Vedrà solo il proprio piano: non può creare piani né vedere altri clienti.</div><div class="ex"><div class="small mut">Link</div><div id="invLink" style="word-break:break-all">' + esc(inviteLink(c.inviteCode)) + '</div></div><div class="ex"><div class="small mut">Codice invito, se l\'app lo chiede</div><div class="num" id="invCode">' + fmtCode(c.inviteCode) + '</div></div><button class="btn p wide" onclick="inviteShare(\'' + cid + '\')">Condividi l\'invito</button><div class="g2"><a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(inviteMsg(c)) + '">WhatsApp</a><button class="btn" onclick="inviteCopy(\'' + cid + '\')">Copia il messaggio</button></div><div class="small mut">L\'invito vale per una persona sola: dopo il primo uso non funziona più.</div><button class="btn" onclick="sheetClose()">Chiudi</button></div>');
+}
+function inviteCopy(cid) { const t = inviteMsg(clientById(cid)); try { navigator.clipboard.writeText(t).then(() => toast('Messaggio copiato'), () => toast('Copia non riuscita')); } catch (e) { toast('Copia non riuscita'); } }
+function inviteShare(cid) { const t = inviteMsg(clientById(cid)); if (navigator.share) navigator.share({ text: t }).catch(() => { }); else inviteCopy(cid); }
+function linkCardHtml(c) {
+  if (c.clientUid) return '<div class="card stack" id="linkCard"><div class="row"><h3>Collegamento</h3><span class="chip ok right">collegato</span></div><div class="small mut">' + esc(c.name.split(' ')[0]) + ' usa l\'app con il suo account' + (c.joinedAt ? ' dal ' + new Date(c.joinedAt).toLocaleDateString('it-IT') : '') + '.</div><button class="btn danger" onclick="askConfirm(\'Togliere il collegamento? ' + esc(c.name).replace(/'/g, '') + ' non vedrà più il piano finché non usa un nuovo invito. Piano e diario restano.\',\'Togli il collegamento\',() => unlinkClient(\'' + c.id + '\'))">Togli il collegamento</button></div>';
+  return '<div class="card stack" id="linkCard"><div class="row"><h3>Collegamento</h3><span class="chip warn right">da invitare</span></div><div class="small mut">' + esc(c.name.split(' ')[0]) + ' non ha ancora l\'app. Mandagli l\'invito: con quel link crea il suo account da cliente e trova il piano.</div><button class="btn p" id="inviteBtn" onclick="inviteSheet(\'' + c.id + '\')">Invita ' + esc(c.name.split(' ')[0]) + '</button></div>';
+}
+function installTipHtml() {
+  let off = false; try { off = !!localStorage.getItem('quota_tip_home'); } catch (e) { }
+  const standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone;
+  if (off || standalone) return '';
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  return '<div class="card stack" style="gap:8px;border-color:var(--greenln)"><div class="b">Metti l\'app sulla schermata Home</div><div class="small" style="color:var(--ink2)">' + (ios ? 'In Safari tocca Condividi, poi «Aggiungi a Home».' : 'Nel menu del browser scegli «Installa app» o «Aggiungi a schermata Home».') + ' La prima volta che la apri da lì, accedi con la stessa email e password.</div><button class="btn sm" style="align-self:flex-start" onclick="try{localStorage.setItem(\'quota_tip_home\',\'1\')}catch(e){};render()">Ho capito</button></div>';
+}
+
+// ---------- impostazioni ----------
+function pageSettings() {
+  const isN = ME.role === 'nutri', me = selfClient();
+  let h = '<div class="stack"><h1>Impostazioni</h1>';
+  h += '<div class="card stack" id="accountCard"><div class="row"><span class="avatar">' + esc(initials(ME.name)) + '</span><div class="grow"><div class="b">' + esc(ME.name || '') + '</div><div class="small mut" style="word-break:break-all">' + esc(ME.email || '') + '</div></div><span class="chip dark">' + (isN ? 'Nutrizionista' : 'Cliente') + '</span></div>';
+  if (!isN) {
+    h += '<div class="kv"><span class="mut">Il tuo nutrizionista</span><b>' + esc(ME.nutriName || '') + '</b></div>';
+    if (me) h += '<div><label class="lab small" for="meW">Il tuo peso (kg)</label><input class="inp n" id="meW" type="number" inputmode="decimal" step="0.1" value="' + (me.weight || '') + '" onchange="me_set(\'weight\',num(this.value)||null)"><div class="small mut" style="margin-top:3px">Lo vede anche il tuo nutrizionista: gli serve per i calcoli del piano.</div></div>';
+  }
+  h += '<button class="btn" id="logoutBtn" onclick="askConfirm(\'Uscire dall\\\'account su questo dispositivo?\',\'Esci\',doLogout)">Esci</button></div>';
+  if (isN) h += '<div class="card stack"><div class="b">Come arrivano i clienti</div><div class="small mut">Crea il cliente, prepara il piano e mandagli l\'invito dalla sua scheda. Chi apre il tuo link si registra come tuo cliente: vede solo il proprio piano. Chi si registra senza invito è un nutrizionista, con i suoi clienti separati dai tuoi.</div></div>';
+  h += '<div class="card stack"><div class="b">I tuoi dati</div><div class="small mut">Sono salvati nel tuo account e si sincronizzano tra i dispositivi. Senza rete l\'app continua a funzionare e invia tutto appena torna la connessione.</div><button class="btn" onclick="exportJSON()">Esporta una copia</button></div>';
+  h += '<div class="card"><div class="b">Alimenti</div><div class="small mut" style="margin-top:4px">' + DB.foods.filter(f => f.src === 'base').length + ' alimenti di base con valori medi indicativi, ' + DB.foods.filter(f => f.src !== 'base').length + ' aggiunti. I prodotti confezionati arrivano da Open Food Facts tramite codice a barre. I prezzi per la spesa sono medie indicative: ognuno corregge i propri.</div></div>';
+  h += '<div class="card stack"><div class="b">Da dove vengono i numeri</div><div class="small mut">Fabbisogni, intervalli dei macronutrienti e schede degli integratori vengono da linee guida e position stand.</div><button class="btn" onclick="refsSheet()">Vedi le fonti</button></div>';
+  h += '<div class="small mut" style="text-align:center">' + APP_NAME + ' · versione di prova ' + APP_VERSION + '</div></div>';
+  return h;
+}
+function me_set(k, v) { const me = selfClient(); if (!me) return; me[k] = v; persist(); toast('Salvato'); }
+function exportJSON() {
+  const out = { esportato: new Date().toISOString(), account: { nome: ME.name, email: ME.email, ruolo: ME.role }, clienti: DB.clients, piani: DB.plans, diario: DB.logs, spesa: DB.shop, alimenti: DB.foods.filter(f => f.src !== 'base').map(foodData) };
+  const blob = new Blob([JSON.stringify(out, null, 1)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'quota-' + todayISO() + '.json'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
 }
 // ===== LATO NUTRIZIONISTA =====
 function clientLine(c) {
   const plan = planFor(c.id);
+  if (!c.clientUid && !(DB.logs[c.id] && Object.keys(DB.logs[c.id]).length)) return { text: (plan ? 'Piano inviato' : 'Nessun piano') + " · non ha ancora l'app", warn: false, adh: '—' };
   if (!plan) return { text: 'Nessun piano inviato', warn: true, adh: '—' };
   const s = daySummary(c.id, todayISO());
   const w = weekTable(c.id, addDays(todayISO(), -1));
@@ -1386,11 +1818,11 @@ function clientLine(c) {
 }
 function pageClienti() {
   let h = '<div class="stack"><div class="row"><h1>Clienti</h1><button class="btn sm right" onclick="newClientSheet()">+ Nuovo cliente</button></div>';
-  if (!DB.clients.length) h += '<div class="card mut">Nessun cliente. Aggiungine uno.</div>';
-  const list = DB.clients.slice().sort((a, b) => (b.self ? 1 : 0) - (a.self ? 1 : 0) || a.name.localeCompare(b.name));
+  if (!DB.clients.length) h += '<div class="card stack" id="emptyClients"><h2>Ancora nessun cliente</h2><div class="mut">Aggiungi il primo cliente, prepara il piano e mandagli l\'invito: con il tuo link si registra come tuo cliente. Se prima vuoi vedere come funziona, crea un cliente di esempio con piano e una settimana di diario.</div><div class="g2"><button class="btn p" onclick="newClientSheet()">+ Nuovo cliente</button><button class="btn" id="demoBtn" onclick="demoClientCreate()">Cliente di esempio</button></div></div>';
+  const list = DB.clients.slice().sort((a, b) => a.name.localeCompare(b.name));
   list.forEach(c => {
     const l = clientLine(c);
-    h += '<button class="clientcard" onclick="openClient(\'' + c.id + '\')"><span class="avatar">' + esc(initials(c.name)) + '</span><div class="grow"><div class="b">' + esc(c.name) + (c.self ? ' <span class="chip" style="font-size:10px;padding:2px 7px">questo telefono</span>' : '') + '</div><div class="small ' + (l.warn ? 'warn' : 'mut') + '">' + esc(l.text) + '</div></div><div style="text-align:right"><div class="b">' + l.adh + '</div><div class="small mut">giorni in linea</div></div></button>';
+    h += '<button class="clientcard" onclick="openClient(\'' + c.id + '\')"><span class="avatar">' + esc(initials(c.name)) + '</span><div class="grow"><div class="b">' + esc(c.name) + (c.clientUid ? '' : ' <span class="chip warn" style="font-size:10px;padding:2px 7px">da invitare</span>') + '</div><div class="small ' + (l.warn ? 'warn' : 'mut') + '">' + esc(l.text) + '</div></div><div style="text-align:right"><div class="b">' + l.adh + '</div><div class="small mut">giorni in linea</div></div></button>';
   });
   h += '<div class="small mut" style="margin-top:4px">«Giorni in linea»: giornate chiuse degli ultimi 7 giorni con calorie, macro, sale e acqua entro la tolleranza.</div></div>';
   return h;
@@ -1399,14 +1831,14 @@ function newClientSheet() {
   sheetOpen('<div class="stack"><h2>Nuovo cliente</h2><div><label class="lab" for="ncName">Nome</label><input class="inp" id="ncName" placeholder="Nome e cognome"></div><div><label class="lab" for="ncW">Peso (kg)</label><input class="inp n" id="ncW" type="number" inputmode="decimal" placeholder="es. 72"></div><button class="btn p wide" onclick="newClientDo()">Aggiungi</button></div>');
   { const i = document.getElementById('ncName'); if (i) i.focus(); }
 }
-function newClientDo() { const n = document.getElementById('ncName').value.trim(); if (!n) { toast('Serve il nome'); return; } const c = addClient(n, num(document.getElementById('ncW').value) || null, false); sheetClose(); openClient(c.id); }
+function newClientDo() { const n = document.getElementById('ncName').value.trim(); if (!n) { toast('Serve il nome'); return; } const c = addClient(n, num(document.getElementById('ncW').value) || null); sheetClose(); openClient(c.id); }
 function openClient(id) { S.clientId = id; S.tab = planFor(id) ? 'mon' : 'piano'; S.dt = 0; S.exEdit = null; go('cliente'); }
 
 function pageCliente() {
   const c = clientById(S.clientId); if (!c) return pageClienti();
   let h = '<div class="stack">';
   h += '<button class="btn link" style="align-self:flex-start" onclick="go(\'clienti\')">' + ICO.back + ' Clienti</button>';
-  h += '<div class="row"><span class="avatar">' + esc(initials(c.name)) + '</span><div><h1 style="font-size:24px">' + esc(c.name) + '</h1><div class="small mut">' + (c.weight ? c.weight + ' kg · ' : '') + (planFor(c.id) ? 'piano «' + esc(planFor(c.id).name) + '» inviato il ' + new Date(planFor(c.id).sentAt).toLocaleDateString('it-IT') : 'nessun piano inviato') + '</div></div></div>';
+  h += '<div class="row"><span class="avatar">' + esc(initials(c.name)) + '</span><div><h1 style="font-size:24px">' + esc(c.name) + '</h1><div class="small mut">' + (c.clientUid ? 'collegato · ' : 'da invitare · ') + (c.weight ? c.weight + ' kg · ' : '') + (planFor(c.id) ? 'piano «' + esc(planFor(c.id).name) + '» inviato il ' + new Date(planFor(c.id).sentAt).toLocaleDateString('it-IT') : 'nessun piano inviato') + '</div></div></div>';
   h += '<div class="seg">' + [['mon', 'Monitoraggio'], ['piano', 'Piano'], ['dati', 'Dati']].map(t => '<button class="' + (S.tab === t[0] ? 'on' : '') + '" onclick="S.tab=\'' + t[0] + '\';render()">' + t[1] + '</button>').join('') + '</div>';
   if (S.tab === 'mon') h += monitorHtml(c);
   else if (S.tab === 'piano') h += planEditorHtml(c);
@@ -1414,11 +1846,7 @@ function pageCliente() {
   h += '</div>';
   return h;
 }
-function clientDataHtml(c) {
-  return '<div class="card stack"><div class="g2"><div><label class="lab small" for="cName">Nome</label><input class="inp" id="cName" value="' + esc(c.name) + '" onchange="clientSet(\'name\',this.value)"></div><div><label class="lab small" for="cW">Peso (kg)</label><input class="inp n" id="cW" type="number" inputmode="decimal" value="' + (c.weight || '') + '" onchange="clientSet(\'weight\',num(this.value)||null)"></div></div><div class="small mut">Il peso serve per i g/kg nel piano. Nella prossima versione il cliente lo aggiorna dal suo telefono.</div>' + (c.self ? '<div class="hint">Questo è il cliente collegato alla parte Cliente di questo telefono.</div>' : '<button class="btn danger" onclick="askConfirm(\'Eliminare ' + esc(c.name).replace(/'/g, '') + ' con piano e diario?\',\'Elimina\',deleteClient)">Elimina cliente</button>') + '</div>';
-}
-function clientSet(k, v) { const c = clientById(S.clientId); c[k] = v; persist(); toast('Salvato'); }
-function deleteClient() { DB.clients = DB.clients.filter(c => c.id !== S.clientId); delete DB.plans[S.clientId]; delete DB.logs[S.clientId]; persist(); go('clienti'); }
+function deleteClient() { const id = S.clientId; S.clientId = null; S.page = 'clienti'; cloudDeleteClient(id); toast('Cliente eliminato'); }
 
 // --- monitoraggio ---
 function monitorHtml(c) {
@@ -1554,7 +1982,7 @@ function exSearch(q) {
 }
 function exPick(id) { const f = foodById(id); qtySheet(f, null, v => { _dt().slots[S.exEdit.slot].examples[S.exEdit.ex].items.push({ foodId: id, qty: v }); touch(); }); }
 function previewPlan() { const d = _d(); sheetOpen('<div class="stack"><h2>' + esc(d.name) + '</h2><div class="small mut">Così lo vede il cliente nella scheda Piano.</div>' + planView(d) + '<button class="btn wide" onclick="sheetClose()">Chiudi</button></div>'); }
-function doSend() { sendPlan(S.clientId); toast('Piano inviato'); render(); }
+function doSend() { sendPlan(S.clientId); toast('Piano inviato'); render(); const c = clientById(S.clientId); if (c && !c.clientUid) inviteSheet(c.id); }
 
 // ===== ALIMENTI =====
 function pageAlimenti() {
@@ -1569,14 +1997,15 @@ function pageAlimenti() {
 function renderFoodList() { const q = S.q || ''; const list = q.trim() ? searchFoods(q, 60) : DB.foods.filter(f => f.src !== 'base').slice().reverse(); document.getElementById('foodList').innerHTML = foodListHtml(list, q); }
 function foodListHtml(list, q) {
   if (!list.length) return '<div class="mut">' + (q.trim() ? 'Nessun alimento trovato. <button class="btn link" onclick="foodEditSheet(null,S.q)">Crea «' + esc(q.trim()) + '»</button>' : 'Qui compaiono gli alimenti che aggiungi tu o dal codice a barre. Cerca sopra per vedere quelli di base.') + '</div>';
-  return list.map(f => '<button class="food" style="width:100%;text-align:left;background:transparent;border-left:0;border-right:0;border-bottom:0" onclick="foodEditSheet(\'' + f.id + '\')"><div class="grow"><div class="b">' + esc(f.name) + (f.src === 'off' ? ' <span class="chip" style="font-size:10px;padding:2px 7px">etichetta</span>' : f.src === 'custom' ? ' <span class="chip" style="font-size:10px;padding:2px 7px">tuo</span>' : '') + '</div><div class="small mut">' + r0(f.kcal) + ' kcal · P ' + r1(f.p) + ' · C ' + r1(f.c) + ' · G ' + r1(f.g) + (f.salt ? ' · sale ' + r1(f.salt) : '') + '</div></div><span class="mut">›</span></button>').join('');
+  return list.map(f => '<button class="food" style="width:100%;text-align:left;background:transparent;border-left:0;border-right:0;border-bottom:0" onclick="foodEditSheet(\'' + f.id + '\')"><div class="grow"><div class="b">' + esc(f.name) + (f.src === 'off' ? ' <span class="chip" style="font-size:10px;padding:2px 7px">etichetta</span>' : isMine(f) ? ' <span class="chip" style="font-size:10px;padding:2px 7px">tuo</span>' : f.src !== 'base' ? ' <span class="chip" style="font-size:10px;padding:2px 7px">di un cliente</span>' : '') + '</div><div class="small mut">' + r0(f.kcal) + ' kcal · P ' + r1(f.p) + ' · C ' + r1(f.c) + ' · G ' + r1(f.g) + (f.salt ? ' · sale ' + r1(f.salt) : '') + '</div></div><span class="mut">›</span></button>').join('');
 }
 function foodEditSheet(id, presetName, ctx, preset) {
   const f = id ? foodById(id) : Object.assign({ name: presetName || '', cat: 'altro', kcal: '', p: '', c: '', g: '', fib: '', salt: '', price: '', pack: '', portions: [] }, preset || {});
   window._foodCtx = ctx || null; window._foodId = id || null; window._foodPreset = preset || null;
+  const ro = !!id && !isMine(f);
   const inp = (k, label, step) => '<div><label class="lab small" for="fe_' + k + '">' + label + '</label><input class="inp n" id="fe_' + k + '" type="number" inputmode="decimal" step="' + (step || 0.1) + '" value="' + (f[k] === '' || f[k] == null ? '' : f[k]) + '"></div>';
   const p0 = (f.portions || [])[0] || { name: '', g: '' };
-  sheetOpen('<div class="stack"><h2>' + (id ? 'Alimento' : 'Nuovo alimento') + '</h2>' + (preset && preset.brand ? '<div class="small mut">' + esc(preset.brand) + ' · da Open Food Facts, codice ' + esc(preset.barcode || '') + '</div>' : '') +
+  sheetOpen('<div class="stack"><h2>' + (id ? (ro && f.src === 'base' ? 'Alimento di base' : 'Alimento') : 'Nuovo alimento') + '</h2>' + (ro ? '<div class="hint">' + (f.src === 'base' ? 'I valori degli alimenti di base non si modificano: se ti servono diversi, crea un alimento tuo.' : 'Questo alimento è stato creato da un\'altra persona.') + ' Puoi cambiare prezzo e confezione, che valgono solo per te.</div>' : '') + (preset && preset.brand ? '<div class="small mut">' + esc(preset.brand) + ' · da Open Food Facts, codice ' + esc(preset.barcode || '') + '</div>' : '') +
     '<div><label class="lab small" for="fe_name">Nome</label><input class="inp" id="fe_name" value="' + esc(f.name) + '"></div>' +
     '<div><label class="lab small" for="fe_cat">Categoria</label><select class="inp" id="fe_cat">' + CATS.map(c => '<option' + (c === f.cat ? ' selected' : '') + '>' + c + '</option>').join('') + '</select></div>' +
     '<div class="small mut b">Valori per 100 g</div><div class="g3">' + inp('p', 'Proteine g') + inp('c', 'Carboidrati g') + inp('g', 'Grassi g') + '</div>' +
@@ -1585,15 +2014,17 @@ function foodEditSheet(id, presetName, ctx, preset) {
     '<div class="small mut b">Porzione rapida (facoltativa)</div><div class="g2"><input class="inp" id="fe_pn" placeholder="es. fetta" value="' + esc(p0.name) + '"><input class="inp n" id="fe_pg" type="number" inputmode="decimal" placeholder="grammi" value="' + (p0.g || '') + '"></div>' +
     '<div class="small mut b">Per la spesa (facoltativi)</div><div class="g2">' + inp('price', 'Prezzo € al kg', 0.1) + inp('pack', 'Confezione g (0 = sfuso)', 10) + '</div>' +
     '<div class="g2"><button class="btn" onclick="sheetClose()">Annulla</button><button class="btn p" onclick="foodSave()">Salva</button></div>' +
-    (id && f.src !== 'base' ? '<button class="btn danger" onclick="foodDel()">Elimina alimento</button>' : '') + '</div>');
-  { const i = document.getElementById(f.name ? 'fe_p' : 'fe_name'); if (i) i.focus(); }
+    (id && isMine(f) ? '<button class="btn danger" onclick="foodDel()">Elimina alimento</button>' : '') + '</div>');
+  if (ro) ['fe_name', 'fe_cat', 'fe_p', 'fe_c', 'fe_g', 'fe_kcal', 'fe_fib', 'fe_salt', 'fe_pn', 'fe_pg'].forEach(i => { const el = document.getElementById(i); if (el) el.disabled = true; });
+  { const i = document.getElementById(ro ? 'fe_price' : f.name ? 'fe_p' : 'fe_name'); if (i) i.focus(); }
 }
 function feKcal() { const g = k => num(document.getElementById('fe_' + k).value); document.getElementById('fe_kcal').value = r0(kcalOfMacros({ p: g('p'), c: g('c'), g: g('g') })); }
 function foodSave() {
   const g = k => num(document.getElementById('fe_' + k).value);
   const name = document.getElementById('fe_name').value.trim(); if (!name) { toast('Serve il nome'); return; }
   let f = window._foodId ? foodById(window._foodId) : null;
-  if (!f) { f = { id: uid(), src: 'custom', portions: [] }; DB.foods.push(f); if (window._foodPreset) { f.src = 'off'; f.barcode = window._foodPreset.barcode; f.brand = window._foodPreset.brand; } }
+  if (f && !isMine(f)) { if (!DB.prices) DB.prices = {}; DB.prices[f.id] = { price: g('price') || null, pack: Math.max(0, g('pack')) }; applyPrices(); if (ME.role === 'client') shopState(ME.clientId); persist(); sheetClose(); toast('Prezzo salvato'); render(); return; }
+  if (!f) { f = { id: uid(), src: 'custom', portions: [], owner: myOwner(), _t: Date.now() }; f._path = myFoodsPrefix() + '/' + f.id; DB.foods.push(f); if (window._foodPreset) { f.src = 'off'; f.barcode = window._foodPreset.barcode; f.brand = window._foodPreset.brand; } }
   Object.assign(f, { name, cat: document.getElementById('fe_cat').value, kcal: g('kcal') || r0(kcalOfMacros({ p: g('p'), c: g('c'), g: g('g') })), p: g('p'), c: g('c'), g: g('g'), fib: g('fib'), salt: g('salt'), price: g('price') || null, pack: Math.max(0, g('pack')) });
   const pn = document.getElementById('fe_pn').value.trim(), pg = num(document.getElementById('fe_pg').value);
   f.portions = pn && pg > 0 ? [{ name: pn, g: pg }] : (f.portions || []).slice(1).length ? f.portions.slice(1) : [];
@@ -1649,7 +2080,7 @@ function afterBarcode(f, ctx) {
 
 // ===== AVVIO =====
 document.addEventListener('click', e => { if (!e.target.closest('.srch')) document.querySelectorAll('.srch .res').forEach(r => r.hidden = true); });
-load(); render();
+boot();
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) { navigator.serviceWorker.register('sw.js').catch(() => { }); }
 </script>
 </body>
