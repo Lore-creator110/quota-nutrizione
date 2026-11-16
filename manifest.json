@@ -1,15 +1,30 @@
 {
-  "name": "Quota · piani nutrizionali",
+  "name": "Quota · Planner Nutrizionale",
   "short_name": "Quota",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#F3F4EF",
-  "theme_color": "#16201B",
+  "background_color": "#f8fafc",
+  "theme_color": "#111827",
   "lang": "it",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
