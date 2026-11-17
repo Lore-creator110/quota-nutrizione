@@ -1,5 +1,5 @@
-// Quota · service worker v4 — cache dell'app e dei componenti Firebase per l'uso offline
-const CACHE = 'quota-v4';
+// Quota · service worker v5 — cache dell'app e dei componenti Firebase per l'uso offline
+const CACHE = 'quota-v5';
 const FILES = ['./', './index.html', './config.js', './manifest.json', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
